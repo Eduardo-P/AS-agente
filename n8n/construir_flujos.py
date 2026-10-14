@@ -27,6 +27,7 @@ IDS = {
     "claude": "PimsClaudeCode00", "carpetas": "PimsCrearCarpeta", "auditar": "PimsAuditar00000",
     "perfilar": "PimsPerfilar0000", "aprobar": "PimsAprobaciones", "renovar": "PimsRenovaciones",
     "consultas": "PimsConsultas000", "admin": "PimsAdministrar0", "pagina": "PimsPaginaWeb000",
+    "chat": "PimsChat00000000",
 }
 
 # --------------------------------------------------------------------------- JS común
@@ -314,29 +315,45 @@ return [{ json: { clave: 'config', ruta: R('datos', 'config_modelo.json') } }];
 """)
     f.llamar("Leer configuración", (440, 0), "leer")
     f.code("Preparar peticiones", (660, 0), r"""
-const DEF = { proveedor: 'claude_code', modelo: 'sonnet', url_ollama: 'http://localhost:11434',
+const DEF = { proveedor: 'claude_code', modelo: 'sonnet', url_ollama: 'http://127.0.0.1:11434',
   url_openai: 'https://api.openai.com/v1', url_anthropic: 'https://api.anthropic.com', api_key: '', num_ctx: 49152, temperatura: 0,
-  max_tokens: 20000, timeout_s: 1800, claude_bin: 'claude' };
+  max_tokens: 20000, timeout_s: 1800, claude_bin: 'claude', formato_correccion: 'json' };
 let cfg = Object.assign({}, DEF);
 const leido = $input.first().json;
 if (leido.existe) { try { Object.assign(cfg, JSON.parse(leido.archivos[0].texto)); } catch (e) { /* se usan los valores por defecto */ } }
 const SALIDA = { ollama: 0, anthropic: 1, openai: 2, claude_code: 3 };
+// Node 17+ resuelve 'localhost' primero a ::1 (IPv6) y Ollama, en Windows, escucha solo en 127.0.0.1:
+// ECONNREFUSED ::1:11434. Se usa siempre la dirección IPv4.
+const ipv4 = (u) => String(u).replace(/\/+$/, '').replace(/^(https?:\/\/)localhost(?=[:\/]|$)/i, '$1127.0.0.1');
 return $('Entrada').all().map((it) => {
-  const { system, mensaje, etiqueta } = it.json;
+  const { system, mensaje, etiqueta, formato } = it.json;
   const r = { proveedor: cfg.proveedor, modelo: cfg.modelo, etiqueta: etiqueta || '', inicio: Date.now(),
     timeout: Math.max(60, Number(cfg.timeout_s) || 1800) * 1000, salida: SALIDA[cfg.proveedor] ?? 4, cabeceras: {} };
   const temp = Number(cfg.temperatura) || 0;
+  // Sin mensaje no hay nada que preguntar (p. ej. el paso anterior ya falló): no se llama al modelo.
+  if (!mensaje) return { json: Object.assign(r, { salida: 4, error_previo: 'Petición al modelo sin mensaje (el paso anterior falló).' }) };
   if (cfg.proveedor === 'ollama') {
-    r.url = String(cfg.url_ollama).replace(/\/+$/, '') + '/api/chat';
+    r.url = ipv4(cfg.url_ollama) + '/api/chat';
     r.cuerpo = { model: cfg.modelo, stream: false, messages: [{ role: 'system', content: system }, { role: 'user', content: mensaje }],
-      options: { num_ctx: Number(cfg.num_ctx) || 49152, temperature: temp } };
+      options: { num_ctx: Number(cfg.num_ctx) || 49152, temperature: temp,
+        // Tope de salida: sin él, un modelo que entra en bucle escribe hasta llenar el contexto.
+        num_predict: Number(cfg.max_tokens) || 20000 } };
+    // Salida estructurada de Ollama en la corrección del JSON (formato_correccion):
+    //   'json'    → JSON válido garantizado (sin comentarios); costo casi nulo. Por defecto.
+    //   'esquema' → además la forma exacta (24 controles, valores permitidos); más lento con modelos locales.
+    //   'ninguno' → sin restricción.
+    if (formato && typeof formato === 'object') {
+      const modo = cfg.formato_correccion || 'json';
+      if (modo === 'esquema') r.cuerpo.format = formato;
+      else if (modo === 'json') r.cuerpo.format = 'json';
+    }
   } else if (cfg.proveedor === 'anthropic') {
     r.url = String(cfg.url_anthropic).replace(/\/+$/, '') + '/v1/messages';
     r.cabeceras = { 'x-api-key': cfg.api_key, 'anthropic-version': '2023-06-01' };
     r.cuerpo = { model: cfg.modelo, max_tokens: Number(cfg.max_tokens) || 20000, system,
       messages: [{ role: 'user', content: mensaje }], temperature: temp };
   } else if (cfg.proveedor === 'openai') {
-    r.url = String(cfg.url_openai).replace(/\/+$/, '') + '/chat/completions';
+    r.url = ipv4(cfg.url_openai) + '/chat/completions';
     if (cfg.api_key) r.cabeceras = { Authorization: `Bearer ${cfg.api_key}` };
     r.cuerpo = { model: cfg.modelo, temperature: temp, max_tokens: Number(cfg.max_tokens) || 20000,
       messages: [{ role: 'system', content: system }, { role: 'user', content: mensaje }] };
@@ -367,7 +384,7 @@ return reqs.map((r, i) => {
   const x = res[i] || {};
   let texto = null, error = null, truncado = false;
   try {
-    if (r.salida === 4) error = `Proveedor de modelo no válido: '${r.proveedor}'. Usa ollama, anthropic, openai o claude_code.`;
+    if (r.salida === 4) error = r.error_previo || `Proveedor de modelo no válido: '${r.proveedor}'. Usa ollama, anthropic, openai o claude_code.`;
     else if (r.proveedor === 'claude_code') {
       if (x.error) error = `Claude Code no disponible: ${err(x.error)}. ¿Está habilitado Execute Command (NODES_EXCLUDE="[]") y 'claude' en el PATH?`;
       else {
@@ -495,7 +512,7 @@ try {
     jurisdiccion: { id: jid, marcoMd: mArch.texto, params },
   });
   const mensaje = PIMS_PROMPTS.mensajeAuditoria({ contrato, proveedor: v.proveedor, fechaRef: v.fechaRef });
-  return [{ json: { ok: true, system, mensaje, ctx: { config, jur: params, esquema, hash,
+  return [{ json: { ok: true, system, mensaje, ctx: { config, jur: params, esquema, hash, contrato,
     perfil: perfilA ? { texto: perfilA.texto, ruta: `organizaciones/${v.organizacion}/perfil_organizacion.md`, sha256: perfilA.sha256 } : null } } }];
 } catch (e) { return fallo(`Error al preparar la auditoría: ${e.message}`); }
 """, "calcular", "prompts")
@@ -518,17 +535,22 @@ if (!r.ok) return [{ json: { ok: false, error: r.error, necesita_correccion: fal
 const ext = PIMS_PROMPTS.extraerJSON(r.texto);
 const informe = PIMS_PROMPTS.informeSinJSON(r.texto);
 let errores = [];
+const ajustes = ext.objeto ? PIMS_PROMPTS.normalizarRegistro(ext.objeto, ctx.esquema) : [];
+if (ext.reparado) ajustes.unshift('JSON con comentarios o comas finales, reparado');
 if (!ext.objeto) errores = ['No se encontró un bloque ```json válido con el registro.'];
-else errores = PIMS_CALC.validarEntrada(JSON.parse(JSON.stringify(ext.objeto)), ctx.esquema);
-return [{ json: { ok: true, necesita_correccion: errores.length > 0, errores, informe, objeto: ext.objeto,
+else errores = PIMS_CALC.validarEntrada(JSON.parse(JSON.stringify(ext.objeto)), ctx.esquema)
+  .concat(PIMS_PROMPTS.revisarControles(ext.objeto));
+return [{ json: { ok: true, necesita_correccion: errores.length > 0, errores, informe, objeto: ext.objeto, ajustes,
   crudo: ext.crudo, modelo: r.modelo, proveedor: r.proveedor, truncado: r.truncado, reintentos: 0, texto_modelo: r.texto } }];
 """, "calcular", "prompts")
     f.si("¿Corregir JSON?", (3520, -200), "={{ $json.necesita_correccion }}")
     f.code("Pedir corrección", (3740, -300), r"""
 const p = $('Procesar respuesta').first().json;
 const c = $('Construir prompt').first().json;
-return [{ json: { system: c.system, etiqueta: 'correccion_json',
-  mensaje: c.mensaje + '\n\n' + PIMS_PROMPTS.mensajeCorreccionJSON(p.crudo || '(no entregaste un bloque JSON: genéralo completo)', p.errores) } }];
+// 'formato' solo lo usa Ollama (salida estructurada); los demás proveedores lo ignoran.
+return [{ json: { system: c.system, etiqueta: 'correccion_json', formato: PIMS_PROMPTS.esquemaParaModelo(c.ctx.esquema),
+  mensaje: c.mensaje + '\n\n' + PIMS_PROMPTS.mensajeCorreccionJSON(p.crudo || '(no entregaste un bloque JSON: genéralo completo)', p.errores,
+    PIMS_PROMPTS.seccion(p.informe, 4)) } }];
 """, "prompts")
     f.llamar("Modelo (corrección)", (3960, -300), "modelo")
     f.code("Procesar corrección", (4180, -300), r"""
@@ -537,8 +559,11 @@ const p = $('Procesar respuesta').first().json;
 const ctx = $('Construir prompt').first().json.ctx;
 if (!r.ok) return [{ json: Object.assign({}, p, { ok: false, error: `La corrección falló: ${r.error}` }) }];
 const ext = PIMS_PROMPTS.extraerJSON(r.texto);
-const errores = ext.objeto ? PIMS_CALC.validarEntrada(JSON.parse(JSON.stringify(ext.objeto)), ctx.esquema) : ['Sin JSON en la corrección'];
-return [{ json: Object.assign({}, p, { objeto: ext.objeto || p.objeto, errores, reintentos: 1 }) }];
+const ajustes = ext.objeto ? PIMS_PROMPTS.normalizarRegistro(ext.objeto, ctx.esquema) : p.ajustes;
+if (ext.reparado) ajustes.unshift('JSON con comentarios o comas finales, reparado');
+const errores = ext.objeto ? PIMS_CALC.validarEntrada(JSON.parse(JSON.stringify(ext.objeto)), ctx.esquema)
+  .concat(PIMS_PROMPTS.revisarControles(ext.objeto)) : ['Sin JSON en la corrección'];
+return [{ json: Object.assign({}, p, { objeto: ext.objeto || p.objeto, errores, ajustes, reintentos: 1, texto_correccion: r.texto }) }];
 """, "calcular", "prompts")
     f.code("Calcular y componer", (4400, -100), r"""
 const x = $input.first().json;
@@ -548,13 +573,22 @@ const items = [];
 const terminar = (datos) => items.push(archivoTrabajo(v.trabajo, Object.assign({ tipo: 'auditoria',
   organizacion: v.organizacion, proveedor: v.proveedor, inicio: v.inicio, fin: ahora() }, datos)));
 const fallar = (msg, extra) => {
-  if (x.texto_modelo) items.push({ json: { ruta: R('datos', 'fallidos', `${v.trabajo}.md`), texto: x.texto_modelo } });
+  if (x.texto_modelo) {
+    const partes = [`# Auditoría fallida ${v.trabajo}`, '', `Motivo: ${msg}`, ''];
+    const errs = (extra && extra.errores) || x.errores || [];
+    if (errs.length) partes.push('## Errores de esquema', '', ...errs.slice(0, 40).map((e) => `- ${e}`), '');
+    partes.push('## Primera respuesta del modelo', '', x.texto_modelo, '');
+    if (x.texto_correccion) partes.push('## Respuesta a la corrección', '', x.texto_correccion, '');
+    items.push({ json: { ruta: R('datos', 'fallidos', `${v.trabajo}.md`), texto: partes.join('\n') } });
+  }
   terminar(Object.assign({ estado: 'error', mensaje: msg }, extra || {}));
   return items;
 };
 if (!x.ok) return fallar(x.error);
 if (!x.objeto) return fallar('El modelo no entregó el JSON del registro.', { errores: x.errores });
 const obj = x.objeto;
+const incompletos = PIMS_PROMPTS.revisarControles(obj);
+if (incompletos.length) return fallar('El modelo no evaluó los 24 controles, incluso tras una corrección.', { errores: incompletos });
 obj.trazabilidad = obj.trazabilidad || {};
 obj.trazabilidad.version_skill = obj.trazabilidad.version_skill || '2.0';
 obj.trazabilidad.evaluador = obj.trazabilidad.evaluador || `Agente 7 — ${x.modelo} (${x.proveedor}) vía n8n`;
@@ -567,11 +601,14 @@ const res = r.resultado;
 const base = nombreSeguro(String(res.id_evaluacion || '').replace(/\s+/g, '')) || `DPA-${v.fechaRef.replace(/-/g, '')}`;
 const id = `${base}_${$now.toFormat('HHmmss')}`;
 res._registro = { id_registro: id, trabajo: v.trabajo, organizacion: v.organizacion, creado: ahora(),
-  modelo: x.modelo, proveedor: x.proveedor, reintentos: x.reintentos, errores_esquema_salida: r.errores, truncado: !!x.truncado };
+  modelo: x.modelo, proveedor: x.proveedor, reintentos: x.reintentos, errores_esquema_salida: r.errores, truncado: !!x.truncado,
+  ajustes_automaticos: x.ajustes || [] };
 let md = PIMS_PROMPTS.componerInforme(x.informe, res, ctx.config, { modelo: x.modelo, proveedor: x.proveedor, reintentos: x.reintentos });
 if (!/\|\s*A\.2\.2\.2\s*\|/.test(md)) md = PIMS_PROMPTS.insertarEnSeccion(md, 4, PIMS_PROMPTS.matrizControles(res));
 items.push({ json: { ruta: R('datos', 'registro', `${id}.json`), texto: JSON.stringify(res, null, 2) } });
 items.push({ json: { ruta: R('datos', 'registro', `${id}.md`), texto: md } });
+// Copia del texto evaluado: la usa el chat para responder sobre el contrato.
+if (ctx.contrato) items.push({ json: { ruta: R('datos', 'registro', `${id}.contrato.txt`), texto: ctx.contrato } });
 const p = res.puntaje_proveedor;
 terminar({ estado: 'terminado', mensaje: r.resumenTexto, id_registro: id, puntaje: p.valor, banda: p.banda,
   dictamen: res.dictamen, advertencias: r.advertencias, errores_esquema: r.errores });
@@ -634,6 +671,7 @@ return [
   p('plantilla', 'pims-perfilador-organizacion', 'assets', 'plantilla_perfil.md'),
   p('criterios', 'pims-dpa-auditor', 'references', 'criterios_semaforo.md'),
   p('perfil_actual', 'organizaciones', v.organizacion, 'perfil_organizacion.md'),
+  p('modelo', 'datos', 'config_modelo.json'),
 ];
 """)
     f.llamar("Leer archivos", (1760, -100), "leer")
@@ -656,7 +694,8 @@ try {
     partes.forEach((t, k) => items.push({ json: { ok: true, system, etiqueta: `D${i + 1} ${k + 1}/${partes.length}`, doc: `D${i + 1}`,
       mensaje: PIMS_PROMPTS.mensajeNotas({ id: `D${i + 1}`, titulo: meta[i].titulo, parte: k + 1, total: partes.length, texto: t }) } }));
   });
-  items[0].json.ctx = { config, meta, sinTexto, perfilActual: textoDe(L, 'perfil_actual'), system };
+  let modelo = {}; try { modelo = jsonDe(L, 'modelo') || {}; } catch (e) { modelo = {}; }
+  items[0].json.ctx = { config, meta, sinTexto, perfilActual: textoDe(L, 'perfil_actual'), system, modelo };
   return items;
 } catch (e) { return fallo(`Error al preparar el perfil: ${e.message}`); }
 """, "prompts")
@@ -681,10 +720,13 @@ const malo = res.find((r) => !r.ok);
 if (malo) return [{ json: { ok: false, error: `El modelo falló al extraer notas (${malo.etiqueta}): ${malo.error}` } }];
 const porDoc = {};
 res.forEach((r, i) => { (porDoc[pedidos[i].doc] = porDoc[pedidos[i].doc] || []).push(`(${r.etiqueta})\n${r.texto}`); });
-const notas = Object.entries(porDoc).map(([d, ns]) => `### ${d}\n${ns.join('\n\n')}`).join('\n\n');
+// Las notas de todos los documentos deben caber en el contexto del modelo (ver presupuestoNotas).
+const fijos = ctx.system.length + 4000 + ctx.meta.length * 160;
+const comp = PIMS_PROMPTS.compactarNotas(porDoc, PIMS_PROMPTS.presupuestoNotas(ctx.modelo, fijos));
 const mensaje = PIMS_PROMPTS.mensajePerfil({ organizacion: { nombre: ctx.config.organizacion, id: v.organizacion },
-  jurisdiccion: ctx.config.jurisdiccion || 'peru', fecha: hoy(), documentos: ctx.meta, notas });
-return [{ json: { ok: true, system: ctx.system, mensaje, etiqueta: 'perfil' } }];
+  jurisdiccion: ctx.config.jurisdiccion || 'peru', fecha: hoy(), documentos: ctx.meta, notas: comp.texto });
+return [{ json: { ok: true, system: ctx.system, mensaje, etiqueta: 'perfil', notas_recortadas: comp.recortadas,
+  notas_caracteres: comp.original } }];
 """, "prompts")
     f.llamar("Modelo (perfil)", (3520, -200), "modelo")
     f.code("Validar perfil", (3740, -200), r"""
@@ -692,9 +734,13 @@ const r = $input.first().json;
 const prev = $('Preparar perfil').first().json;
 if (!prev.ok) return [{ json: { ok: false, error: prev.error, necesita: false } }];
 if (!r.ok) return [{ json: { ok: false, error: r.error, necesita: false } }];
-const md = PIMS_PROMPTS.limpiarMarkdown(r.texto);
+const ctx = $('Preparar notas').first().json.ctx;
+const v = $('Validar petición').first().json;
+const norm = PIMS_PROMPTS.normalizarPerfil(PIMS_PROMPTS.limpiarMarkdown(r.texto), { meta: ctx.meta,
+  organizacion: ctx.config.organizacion, id: v.organizacion, jurisdiccion: ctx.config.jurisdiccion || 'peru', fecha: hoy() });
+const md = norm.md;
 const val = PIMS_PERFIL.validar(md);
-return [{ json: { ok: true, md, val, necesita: !val.valido, reintentos: 0, modelo: r.modelo, proveedor: r.proveedor } }];
+return [{ json: { ok: true, md, val, ajustes: norm.ajustes, necesita: !val.valido, reintentos: 0, modelo: r.modelo, proveedor: r.proveedor } }];
 """, "perfil", "prompts")
     f.si("¿Corregir perfil?", (3960, -200), "={{ $json.necesita }}")
     f.code("Pedir corrección", (4180, -300), r"""
@@ -707,9 +753,13 @@ return [{ json: { system: pp.system, etiqueta: 'correccion_perfil', mensaje: PIM
 const r = $input.first().json;
 const p = $('Validar perfil').first().json;
 if (!r.ok) return [{ json: Object.assign({}, p, { reintentos: 1 }) }];
-const md = PIMS_PROMPTS.limpiarMarkdown(r.texto);
+const ctx = $('Preparar notas').first().json.ctx;
+const v = $('Validar petición').first().json;
+const norm = PIMS_PROMPTS.normalizarPerfil(PIMS_PROMPTS.limpiarMarkdown(r.texto), { meta: ctx.meta,
+  organizacion: ctx.config.organizacion, id: v.organizacion, jurisdiccion: ctx.config.jurisdiccion || 'peru', fecha: hoy() });
+const md = norm.md;
 const val = PIMS_PERFIL.validar(md);
-return [{ json: Object.assign({}, p, val.errores.length <= p.val.errores.length ? { md, val } : {}, { reintentos: 1 }) }];
+return [{ json: Object.assign({}, p, val.errores.length <= p.val.errores.length ? { md, val, ajustes: norm.ajustes } : {}, { reintentos: 1 }) }];
 """, "perfil", "prompts")
     f.code("Guardar perfil", (4840, -100), r"""
 const x = $input.first().json;
@@ -720,8 +770,10 @@ const fin = (datos) => items.push(archivoTrabajo(v.trabajo, Object.assign({ tipo
 if (!x.ok) { fin({ estado: 'error', mensaje: x.error }); return items; }
 const carpeta = (n) => R('organizaciones', v.organizacion, n);
 const ctx = $('Preparar notas').first().json.ctx;
+const pp = $('Preparar perfil').first().json;
 const resumen = { valido: x.val.valido, errores: x.val.errores, advertencias: x.val.advertencias, documentos: ctx.meta,
-  sin_texto: ctx.sinTexto, generado: ahora(), modelo: x.modelo, proveedor: x.proveedor, reintentos: x.reintentos };
+  sin_texto: ctx.sinTexto, generado: ahora(), modelo: x.modelo, proveedor: x.proveedor, reintentos: x.reintentos,
+  ajustes_automaticos: x.ajustes || [], notas_recortadas: pp.notas_recortadas || 0 };
 if (x.val.valido) {
   if (ctx.perfilActual) items.push({ json: { ruta: carpeta('perfil_organizacion.anterior.md'), texto: ctx.perfilActual } });
   items.push({ json: { ruta: carpeta('perfil_organizacion.md'), texto: x.md } });
@@ -731,6 +783,8 @@ if (x.val.valido) {
 items.push({ json: { ruta: carpeta('validacion_perfil.json'), texto: JSON.stringify(resumen, null, 2) } });
 fin({ estado: x.val.valido ? 'terminado' : 'terminado_con_errores',
   mensaje: x.val.valido ? `Perfil generado (Borrador, ${ctx.meta.length} documento(s)). Debe validarlo el DPO.`
+      + ((x.ajustes || []).some((s) => s.includes('Supuesto')) ? ' Hay filas marcadas como Supuesto: revísalas.' : '')
+      + (pp.notas_recortadas ? ` Se omitieron ${pp.notas_recortadas} nota(s) para que cupieran en el contexto del modelo.` : '')
     : `El perfil no pasó la validación (${x.val.errores.length} errores); se guardó como perfil_organizacion.borrador_invalido.md`,
   validacion: resumen });
 return items;
@@ -1080,6 +1134,7 @@ for (const k of ['url_ollama', 'url_openai', 'url_anthropic']) if (b[k] !== unde
 for (const [k, min, max] of [['num_ctx', 2048, 1048576], ['max_tokens', 256, 200000], ['timeout_s', 60, 7200]]) {
   if (b[k] !== undefined) { const v = Number(b[k]); if (Number.isInteger(v) && v >= min && v <= max) n[k] = v; else err.push(`${k} debe ser entero entre ${min} y ${max}`); } }
 if (b.temperatura !== undefined) { const v = Number(b.temperatura); if (v >= 0 && v <= 1) n.temperatura = v; else err.push('temperatura entre 0 y 1'); }
+if (b.formato_correccion !== undefined) { if (['json', 'esquema', 'ninguno'].includes(b.formato_correccion)) n.formato_correccion = b.formato_correccion; else err.push('formato_correccion debe ser json, esquema o ninguno'); }
 if (b.claude_bin !== undefined) { if (/^[A-Za-z0-9._:\\\/ \-]{1,300}$/.test(String(b.claude_bin))) n.claude_bin = String(b.claude_bin); else err.push('claude_bin no válido'); }
 if (typeof b.api_key === 'string' && b.api_key && !b.api_key.startsWith('****')) n.api_key = b.api_key.trim();
 if (b.api_key === '') n.api_key = '';
@@ -1230,11 +1285,160 @@ return [{ json: { js: textoDe($input.all().map((x) => x.json), 'js') || 'console
     f.cadena("Webhook mammoth", "Pedir mammoth", "Leer mammoth", "Script mammoth", "Responder mammoth")
     return f
 
+# --------------------------------------------------------------------------- Chat
+def flujo_chat():
+    f = Flujo("chat", "PIMS · Chat (preguntas sobre un expediente o una organización)",
+              "POST /webhook/pims/chat {ambito: expediente|organizacion, id, organizacion, pregunta, usuario?} → 202 {trabajo}; "
+              "la respuesta queda en GET /webhook/pims/trabajo?id= y la conversación en datos/chats/. "
+              "GET /webhook/pims/chat?ambito=&id= devuelve la conversación. El chat no modifica expedientes ni perfiles.")
+    f.webhook("Webhook chat", (0, 0), "POST", "pims/chat")
+    f.code("Validar petición", (220, 0), r"""
+const b = $input.first().json.body || {};
+const r = { ok: false, codigo: 400 };
+const ambito = String(b.ambito || '');
+const id = String(b.id || '');
+const org = String(b.organizacion || '');
+const pregunta = typeof b.pregunta === 'string' ? b.pregunta.trim() : '';
+if (!['expediente', 'organizacion'].includes(ambito)) r.error = "'ambito' debe ser expediente u organizacion.";
+else if (ambito === 'expediente' && !/^[A-Za-z0-9_.-]{3,140}$/.test(id)) r.error = "Falta 'id' del expediente o no es válido.";
+else if (!idValido(org)) r.error = "Falta 'organizacion' o no es un id válido.";
+else if (!pregunta) r.error = 'Escribe una pregunta.';
+else if (pregunta.length > 4000) r.error = 'La pregunta supera 4 000 caracteres.';
+if (r.error) return [{ json: Object.assign(r, { respuesta: { ok: false, error: r.error } }) }];
+const t = nuevoTrabajo();
+const clave = ambito === 'expediente' ? `exp_${nombreSeguro(id)}` : `org_${org}`;
+return [{ json: { ok: true, codigo: 202, trabajo: t, inicio: ahora(), ambito, id: ambito === 'expediente' ? id : org, organizacion: org,
+  pregunta, usuario: String(b.usuario || '').slice(0, 120), clave,
+  respuesta: { ok: true, trabajo: t, consultar: `/webhook/pims/trabajo?id=${t}` } } }];
+""")
+    f.si("¿Petición válida?", (440, 0), "={{ $json.ok }}")
+    f.responder("Responder error", (660, 200))
+    f.code("Registrar trabajo", (660, -100), r"""
+const v = $('Validar petición').first().json;
+return [archivoTrabajo(v.trabajo, { tipo: 'chat', ambito: v.ambito, id_contexto: v.id, organizacion: v.organizacion,
+  estado: 'en_cola', mensaje: 'Pregunta recibida', inicio: v.inicio })];
+""")
+    f.llamar("Guardar trabajo", (880, -100), "guardar")
+    f.code("Respuesta 202", (1100, -100), r"""
+return [{ json: { codigo: 202, respuesta: $('Validar petición').first().json.respuesta } }];
+""")
+    f.responder("Responder aceptado", (1320, -100))
+    f.code("Pedir archivos", (1540, -100), r"""
+const v = $('Validar petición').first().json;
+const p = (clave, ...r) => ({ json: { clave, ruta: R(...r) } });
+const items = [
+  p('config', 'organizaciones', v.organizacion, 'config_organizacion.json'),
+  p('perfil', 'organizaciones', v.organizacion, 'perfil_organizacion.md'),
+  p('modelo', 'datos', 'config_modelo.json'),
+  p('chat', 'datos', 'chats', `${v.clave}.json`),
+];
+if (v.ambito === 'expediente') items.push(p('registro', 'datos', 'registro', `${v.id}.json`), p('informe', 'datos', 'registro', `${v.id}.md`),
+  p('contrato', 'datos', 'registro', `${v.id}.contrato.txt`));
+else items.push(p('registros', 'datos', 'registro', '*.json'));
+return items;
+""")
+    f.llamar("Leer archivos", (1760, -100), "leer")
+    f.code("Construir pregunta", (1980, -100), r"""
+const v = $('Validar petición').first().json;
+const L = $input.all().map((x) => x.json);
+const fallo = (msg) => [{ json: { ok: false, error: msg } }];
+try {
+  const config = jsonDe(L, 'config');
+  if (!config) return fallo(`La organización '${v.organizacion}' no existe.`);
+  let cfgModelo = {}; try { cfgModelo = jsonDe(L, 'modelo') || {}; } catch (e) { cfgModelo = {}; }
+  let conv = { ambito: v.ambito, id: v.id, organizacion: v.organizacion, mensajes: [] };
+  try { conv = jsonDe(L, 'chat') || conv; } catch (e) { /* conversación ilegible: se empieza de nuevo */ }
+  const cx = { ambito: v.ambito, organizacion: { id: v.organizacion, nombre: config.organizacion || v.organizacion, config },
+    perfil: textoDe(L, 'perfil') };
+  if (v.ambito === 'expediente') {
+    const reg = jsonDe(L, 'registro');
+    if (!reg) return fallo(`No existe el expediente ${v.id}.`);
+    const orgReg = (reg.organizacion || {}).id || (reg._registro || {}).organizacion;
+    if (orgReg && orgReg !== v.organizacion) return fallo(`El expediente ${v.id} es de la organización '${orgReg}', no de '${v.organizacion}'.`);
+    Object.assign(cx, { registro: reg, informe: textoDe(L, 'informe'), contrato: textoDe(L, 'contrato') });
+  } else {
+    cx.registros = todosDe(L, 'registros').map((a) => { try { return JSON.parse(a.texto); } catch (e) { return null; } })
+      .filter((r) => r && ((r.organizacion || {}).id || (r._registro || {}).organizacion) === v.organizacion)
+      .sort((a, b) => String((b._registro || {}).creado || '').localeCompare(String((a._registro || {}).creado || '')));
+  }
+  const q = PIMS_PROMPTS.chat({ contexto: cx, historial: conv.mensajes, pregunta: v.pregunta, cfgModelo });
+  return [{ json: { ok: true, system: q.system, mensaje: q.mensaje, etiqueta: 'chat', recortes: q.recortes, conv } }];
+} catch (e) { return fallo(`Error al preparar la pregunta: ${e.message}`); }
+""", "prompts")
+    f.si("¿Contexto listo?", (2200, -100), "={{ $json.ok }}")
+    f.code("Estado: pensando", (2420, -200), r"""
+const v = $('Validar petición').first().json;
+return [archivoTrabajo(v.trabajo, { tipo: 'chat', ambito: v.ambito, id_contexto: v.id, organizacion: v.organizacion,
+  estado: 'pensando', mensaje: 'El modelo está redactando la respuesta', inicio: v.inicio })];
+""")
+    f.llamar("Guardar estado", (2640, -200), "guardar")
+    f.code("Petición al modelo", (2860, -200), r"""
+const c = $('Construir pregunta').first().json;
+return [{ json: { system: c.system, mensaje: c.mensaje, etiqueta: 'chat' } }];
+""")
+    f.llamar("Modelo", (3080, -200), "modelo")
+    f.code("Guardar respuesta", (3300, -200), r"""
+const r = $input.first().json;
+const v = $('Validar petición').first().json;
+const c = $('Construir pregunta').first().json;
+const base = { tipo: 'chat', ambito: v.ambito, id_contexto: v.id, organizacion: v.organizacion, inicio: v.inicio, fin: ahora() };
+if (!r.ok) return [archivoTrabajo(v.trabajo, Object.assign(base, { estado: 'error', mensaje: r.error }))];
+const texto = String(r.texto || '').trim();
+const conv = c.conv;
+conv.mensajes = (conv.mensajes || []).concat([
+  { rol: 'usuario', texto: v.pregunta, usuario: v.usuario || null, fecha: v.inicio },
+  { rol: 'asistente', texto, fecha: ahora(), modelo: r.modelo, proveedor: r.proveedor, truncado: !!r.truncado,
+    contexto_recortado: c.recortes.length ? c.recortes : undefined },
+]).slice(-200);
+conv.actualizado = ahora();
+return [
+  { json: { ruta: R('datos', 'chats', `${v.clave}.json`), texto: JSON.stringify(conv, null, 2) } },
+  archivoTrabajo(v.trabajo, Object.assign(base, { estado: 'terminado', mensaje: 'Respuesta lista', respuesta_chat: texto,
+    modelo: r.modelo, proveedor: r.proveedor, contexto_recortado: c.recortes })),
+];
+""")
+    f.code("Error de contexto", (2420, 50), r"""
+const v = $('Validar petición').first().json;
+return [archivoTrabajo(v.trabajo, { tipo: 'chat', ambito: v.ambito, id_contexto: v.id, organizacion: v.organizacion,
+  estado: 'error', mensaje: $input.first().json.error, inicio: v.inicio, fin: ahora() })];
+""")
+    f.llamar("Guardar resultado", (3520, -100), "guardar")
+    f.cadena("Webhook chat", "Validar petición", "¿Petición válida?")
+    f.unir("¿Petición válida?", "Registrar trabajo", 0)
+    f.unir("¿Petición válida?", "Responder error", 1)
+    f.cadena("Registrar trabajo", "Guardar trabajo", "Respuesta 202", "Responder aceptado", "Pedir archivos",
+             "Leer archivos", "Construir pregunta", "¿Contexto listo?")
+    f.unir("¿Contexto listo?", "Estado: pensando", 0)
+    f.unir("¿Contexto listo?", "Error de contexto", 1)
+    f.cadena("Estado: pensando", "Guardar estado", "Petición al modelo", "Modelo", "Guardar respuesta", "Guardar resultado")
+    f.unir("Error de contexto", "Guardar resultado")
+
+    # ---- GET: conversación guardada
+    f.webhook("Webhook conversación", (0, 500), "GET", "pims/chat")
+    f.code("Pedir conversación", (220, 500), r"""
+const q = $('Webhook conversación').first().json.query || {};
+const ambito = String(q.ambito || ''), id = String(q.id || '');
+const valido = (ambito === 'expediente' && /^[A-Za-z0-9_.-]{3,140}$/.test(id)) || (ambito === 'organizacion' && idValido(id));
+const clave = ambito === 'expediente' ? `exp_${nombreSeguro(id)}` : `org_${id}`;
+return [{ json: { clave: 'chat', ruta: valido ? R('datos', 'chats', `${clave}.json`) : R('datos', 'chats', '__no_valido__'), valido } }];
+""")
+    f.llamar("Leer conversación", (440, 500), "leer")
+    f.code("Conversación", (660, 500), r"""
+const ok = $('Pedir conversación').first().json.valido;
+if (!ok) return [{ json: { codigo: 400, respuesta: { ok: false, error: "Indica 'ambito' (expediente u organizacion) e 'id'." } } }];
+const L = $input.all().map((x) => x.json);
+let conv = null; try { conv = jsonDe(L, 'chat'); } catch (e) { conv = null; }
+return [{ json: { codigo: 200, respuesta: { ok: true, mensajes: conv ? conv.mensajes || [] : [] } } }];
+""")
+    f.responder("Responder conversación", (880, 500))
+    f.cadena("Webhook conversación", "Pedir conversación", "Leer conversación", "Conversación", "Responder conversación")
+    return f
+
 
 FLUJOS = [flujo_leer, flujo_guardar, flujo_claude, flujo_carpetas, flujo_modelo, flujo_auditar,
-          flujo_perfilar, flujo_aprobar, flujo_renovar, flujo_consultas, flujo_admin, flujo_pagina]
+          flujo_perfilar, flujo_aprobar, flujo_renovar, flujo_consultas, flujo_admin, flujo_pagina, flujo_chat]
 ORDEN_ARCHIVO = {"leer": "01", "guardar": "02", "claude": "03", "carpetas": "04", "modelo": "05", "auditar": "10",
-                 "perfilar": "11", "aprobar": "12", "renovar": "13", "consultas": "20", "admin": "21", "pagina": "30"}
+                 "perfilar": "11", "aprobar": "12", "renovar": "13", "consultas": "20", "admin": "21", "pagina": "30", "chat": "14"}
 
 
 def main():

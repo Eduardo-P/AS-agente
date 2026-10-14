@@ -16,8 +16,8 @@ python pims-dpa-auditor_pruebas/ejecutar_pruebas.py
 |---|---|---|
 | `python pims-dpa-auditor_pruebas/ejecutar_pruebas.py` | Solo Python | 27/27 |
 | `python n8n/pruebas/equivalencia_py_js.py` y `equivalencia_perfil.py` | Python y Node | IDÉNTICOS |
-| `python n8n/pruebas/probar_flujos.py --raiz <copia>` | n8n y el modelo simulado | 21/21 |
-| `python web/pruebas/probar_pagina.py --raiz <copia>` | n8n y Playwright | 9/9 |
+| `python n8n/pruebas/probar_flujos.py --raiz <copia>` | n8n y el modelo simulado | 30/30 |
+| `python web/pruebas/probar_pagina.py --raiz <copia>` | n8n y Playwright | 10/10 |
 | `python pims-dpa-auditor_pruebas/unsa/ejecutar_casos_unsa.py` | n8n y un modelo | Con el simulado, 120/120; con un modelo real, mide su calidad |
 
 Detalle de las de n8n en `n8n/INSTALACION_N8N.md` §6 y de la página en `web/LEEME.md`.

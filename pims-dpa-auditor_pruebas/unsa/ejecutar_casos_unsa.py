@@ -47,7 +47,7 @@ def main():
     ap.add_argument("--fecha-ref", default="2026-10-13")
     ap.add_argument("--repeticiones", type=int, default=1)
     ap.add_argument("--casos", help="Prefijos a ejecutar, p. ej. 01,03 (por defecto todos)")
-    ap.add_argument("--limite-min", type=int, default=20, help="Minutos máximos por auditoría")
+    ap.add_argument("--limite-min", type=int, default=60, help="Minutos máximos de espera por auditoría (n8n permite hasta 30 min por llamada al modelo y hay hasta 2 llamadas)")
     a = ap.parse_args()
 
     try:
@@ -63,6 +63,7 @@ def main():
     salida.mkdir(parents=True, exist_ok=True)
     print(f"Modelo: {modelo} · organización: {a.organizacion} · {len(contratos)} contrato(s) × {a.repeticiones}\nResultados: {salida}\n")
 
+    fallidos = []
     for rep in range(1, a.repeticiones + 1):
         for c in contratos:
             t0 = time.time()
@@ -79,6 +80,17 @@ def main():
             seg = time.time() - t0
             if t.get("estado") != "terminado":
                 print(f"  {c.stem} (rep. {rep}): {t.get('estado', 'sin respuesta')} — {t.get('mensaje', '')[:160]}")
+                for e in (t.get("errores") or [])[:8]:
+                    print(f"      · {e}")
+                if t.get("errores") and len(t["errores"]) > 8:
+                    print(f"      · … y {len(t['errores']) - 8} más")
+                if t.get("estado") == "error" and t.get("trabajo"):
+                    print(f"      Respuesta completa del modelo: datos\\fallidos\\{t['trabajo']}.md")
+                elif t.get("estado") in ("en_cola", "evaluando"):
+                    print(f"      Superó el límite de {a.limite_min} min de este script, pero n8n sigue trabajando.")
+                    print("      Cuando termine aparecerá en la página (Expedientes). Para compararlo entonces:")
+                    print("      python pims-dpa-auditor_pruebas\\unsa\\comparar_con_referencia.py datos\\registro")
+                fallidos.append(c.stem)
                 continue
             d = http(a.n8n, "GET", f"pims/registro/detalle?id={t['id_registro']}")
             sufijo = f"_r{rep}" if a.repeticiones > 1 else ""
@@ -86,6 +98,8 @@ def main():
             (salida / f"{c.stem}{sufijo}.md").write_text(d["informe"] or "", encoding="utf-8")
             print(f"  {c.stem} (rep. {rep}): {t['puntaje']}/100 · {t['dictamen']} · {seg:.0f} s")
 
+    if fallidos:
+        print(f"\nNo terminaron {len(fallidos)} auditoría(s): revisa los mensajes de arriba.")
     if not list(salida.glob("*.json")):
         sys.exit("\nNinguna auditoría terminó: no hay nada que comparar.")
     print()

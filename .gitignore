@@ -20,3 +20,7 @@ organizaciones/*/perfil_organizacion.anterior.md
 
 __pycache__/
 *.pyc
+
+# Conversaciones del chat
+datos/chats/*
+!datos/chats/.gitkeep

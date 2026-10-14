@@ -199,7 +199,58 @@ def main():
         assert t["estado"] == "terminado" and t["puntaje"] == 22, t
         _, d = http("GET", f"pims/registro/detalle?id={t['id_registro']}")
         assert d["resultado"]["_registro"]["reintentos"] == 1, d["resultado"]["_registro"]
-        return "reintentos = 1"
+        if A.log:
+            ultimo = [json.loads(l) for l in open(A.log, encoding="utf-8")][-1]
+            assert ultimo.get("formato") == "json", f"la corrección con Ollama no pidió JSON ({ultimo.get('formato')})"
+        return "reintentos = 1; corrección con format=json"
+
+    @prueba("JSON abreviado con comentarios (1 de 24 controles) → se repara, se detecta y se corrige → 22/100")
+    def _():
+        t = auditar("inversiones_altiplano", contrato["NubeAndina"] + "\nMOCK:JSON_ABREVIADO", "NubeAndina")
+        assert t["estado"] == "terminado" and t["puntaje"] == 22, t
+        if A.log:
+            ultimo = [json.loads(l) for l in open(A.log, encoding="utf-8")][-1]
+            assert "faltan 23 de 24" in ultimo["usuario"], "la corrección no indicó los controles faltantes"
+            assert "Tu matriz de controles del informe" in ultimo["usuario"], "la corrección no incluyó la matriz del informe"
+            assert ultimo.get("formato") == "json"
+        configurar(formato_correccion="esquema")
+        t2 = auditar("inversiones_altiplano", contrato["NubeAndina"] + "\nMOCK:JSON_ABREVIADO", "NubeAndina")
+        configurar(formato_correccion="json")
+        assert t2["estado"] == "terminado" and t2["puntaje"] == 22, t2
+        if A.log:
+            assert [json.loads(l) for l in open(A.log, encoding="utf-8")][-1].get("formato") == "esquema"
+        return "faltan 23 de 24 → corrección con la matriz; format=json y, configurado, el esquema completo"
+
+    @prueba("JSON con 'controles' vacío (solo un comentario) → se detecta y se corrige; nunca un 0/100 sin controles")
+    def _():
+        t = auditar("inversiones_altiplano", contrato["NubeAndina"] + "\nMOCK:SIN_CONTROLES", "NubeAndina")
+        assert t["estado"] == "terminado" and t["puntaje"] == 22, t
+        _, d = http("GET", f"pims/registro/detalle?id={t['id_registro']}")
+        assert d["resultado"]["_registro"]["reintentos"] == 1 and len(d["resultado"]["controles"]) == 24, d["resultado"]["_registro"]
+        u = [json.loads(l) for l in open(A.log, encoding="utf-8")][-1] if A.log else None
+        if u:
+            assert "la lista está vacía" in u["usuario"], "la corrección no explicó el error"
+        return "lista vacía → corrección → 24 controles, 22/100"
+
+    @prueba("Identificadores con adornos, fila A.1.2.7 y null opcional → ajustes de forma sin corrección → 22/100")
+    def _():
+        t = auditar("inversiones_altiplano", contrato["NubeAndina"] + "\nMOCK:IDS_ADORNADOS", "NubeAndina")
+        assert t["estado"] == "terminado" and t["puntaje"] == 22, t
+        _, d = http("GET", f"pims/registro/detalle?id={t['id_registro']}")
+        rg = d["resultado"]["_registro"]
+        assert rg["reintentos"] == 0 and len(rg["ajustes_automaticos"]) == 3, rg
+        assert nucleo(d["resultado"]) == nucleo(ref["NubeAndina"])
+        return "; ".join(a[:40] for a in rg["ajustes_automaticos"])
+
+    @prueba("JSON inválido también tras la corrección → error y datos/fallidos con errores y ambas respuestas")
+    def _():
+        t = auditar("inversiones_altiplano", contrato["NubeAndina"] + "\nMOCK:JSON_ROTO_SIEMPRE", "NubeAndina")
+        assert t["estado"] == "error" and "incluso tras una corrección" in t["mensaje"], t
+        assert t.get("errores"), t
+        f = raiz / "datos" / "fallidos" / f"{t['trabajo']}.md"
+        txt = f.read_text(encoding="utf-8")
+        assert "## Errores de esquema" in txt and "## Primera respuesta del modelo" in txt and "## Respuesta a la corrección" in txt
+        return f"{len(t['errores'])} error(es) registrados en datos/fallidos"
 
     @prueba("Contrato en PDF de 2 páginas → texto con marcadores de página y hash de los bytes del PDF")
     def _():
@@ -266,6 +317,83 @@ def main():
         assert c == 200 and reg.get("aprobado") in [x["id_registro"] for x in j["registros"]], j
         assert all(x["estado"] == "Aprobado" for x in j["registros"]), j
 
+    def chat(cuerpo, limite=120):
+        c, j = http("POST", "pims/chat", cuerpo)
+        assert c == 202 and j.get("trabajo"), (c, j)
+        return esperar(j["trabajo"], limite)
+
+    def ultimo_pedido():
+        return [json.loads(l) for l in open(A.log, encoding="utf-8")][-1] if A.log else None
+
+    @prueba("Chat sobre un expediente: responde con el contexto, guarda la conversación y no modifica el expediente")
+    def _():
+        rid = reg["ollama"]
+        archivos = [raiz / "datos" / "registro" / f"{rid}.{e}" for e in ("json", "md")]
+        antes = [hashlib.sha256(a.read_bytes()).hexdigest() for a in archivos]
+        assert (raiz / "datos" / "registro" / f"{rid}.contrato.txt").is_file(), "la auditoría no guardó el texto del contrato"
+        base = {"ambito": "expediente", "id": rid, "organizacion": "inversiones_altiplano", "usuario": "Prueba"}
+        t = chat(dict(base, pregunta="¿Por qué A.3.10 no cumple?"))
+        assert t["estado"] == "terminado" and "Respuesta simulada (expediente)" in t["respuesta_chat"], t
+        import re
+        n = int(re.search(r"Controles en el contexto: (\d+)", t["respuesta_chat"]).group(1))
+        assert n >= 24, f"el contexto solo tenía {n} controles"
+        u = ultimo_pedido()
+        if u:
+            assert "Eres el asistente del Agente 7" in u["system"] and "CONTENIDO NO CONFIABLE" in u["system"]
+            assert "72 horas" in u["system"] and "Informe de la auditoría" in u["system"], "falta el contrato o el informe en el contexto"
+        t2 = chat(dict(base, pregunta="¿Y qué cláusula propones?"))
+        assert t2["estado"] == "terminado" and "Mensajes previos del usuario: 1" in t2["respuesta_chat"], t2
+        c, j = http("GET", f"pims/chat?ambito=expediente&id={rid}")
+        assert c == 200 and len(j["mensajes"]) == 4 and j["mensajes"][0]["usuario"] == "Prueba", j
+        despues = [hashlib.sha256(a.read_bytes()).hexdigest() for a in archivos]
+        assert antes == despues, "el chat modificó el expediente"
+        return "2 preguntas con historial; expediente intacto"
+
+    @prueba("Chat sobre una organización: incluye solo sus expedientes")
+    def _():
+        t = chat({"ambito": "organizacion", "organizacion": "inversiones_altiplano", "pregunta": "¿Qué proveedores tienen riesgo alto?"})
+        assert t["estado"] == "terminado" and "Respuesta simulada (organizacion)" in t["respuesta_chat"], t
+        u = ultimo_pedido()
+        if u:
+            assert "| Id | Proveedor |" in u["system"] and reg["ollama"] in u["system"]
+            assert reg["andes"] not in u["system"], "se filtraron expedientes de otra organización"
+        c, j = http("GET", "pims/chat?ambito=organizacion&id=inversiones_altiplano")
+        assert c == 200 and len(j["mensajes"]) >= 2, j
+
+    @prueba("Chat: errores (petición inválida, expediente inexistente o de otra organización)")
+    def _():
+        for cuerpo in ({"ambito": "x", "organizacion": "inversiones_altiplano", "pregunta": "a"},
+                       {"ambito": "organizacion", "organizacion": "inversiones_altiplano", "pregunta": "  "}):
+            c, j = http("POST", "pims/chat", cuerpo)
+            assert c == 400 and not j.get("ok"), (c, j)
+        t = chat({"ambito": "expediente", "id": "DPA-NO-EXISTE_1", "organizacion": "inversiones_altiplano", "pregunta": "¿?"})
+        assert t["estado"] == "error" and "No existe el expediente" in t["mensaje"], t
+        t = chat({"ambito": "expediente", "id": reg["andes"], "organizacion": "inversiones_altiplano", "pregunta": "¿?"})
+        assert t["estado"] == "error" and "es de la organización" in t["mensaje"], t
+        c, j = http("GET", "pims/chat")
+        assert c == 400, (c, j)
+
+    @prueba("Chat con Ollama y un informe enorme: el contexto se recorta para caber en 32 768 tokens")
+    def _():
+        rid = reg["ollama"]
+        d = raiz / "datos" / "registro"
+        nuevo = f"{rid}_GRANDE"
+        r = json.loads((d / f"{rid}.json").read_text(encoding="utf-8"))
+        r["_registro"]["id_registro"] = nuevo
+        (d / f"{nuevo}.json").write_text(json.dumps(r, ensure_ascii=False), encoding="utf-8")
+        (d / f"{nuevo}.md").write_text("# Informe\n" + ("Texto del informe muy largo. " * 25000), encoding="utf-8")
+        try:
+            t = chat({"ambito": "expediente", "id": nuevo, "organizacion": "inversiones_altiplano", "pregunta": "Resume"})
+            assert t["estado"] == "terminado" and "Informe de la auditoría" in t.get("contexto_recortado", []), t
+            u = ultimo_pedido()
+            if u:
+                total = len(u["system"]) + len(u["usuario"])
+                assert total <= (32768 - 3000) * 3, f"el pedido ({total} caracteres) no cabe en 32 768 tokens"
+            return "informe recortado"
+        finally:
+            for e in ("json", "md"):
+                (d / f"{nuevo}.{e}").unlink(missing_ok=True)
+
     @prueba("Perfilar organización (2 documentos) → perfil válido en Borrador, hashes reales, nota de inyección en §8")
     def _():
         c, j = http("POST", "pims/perfilar", {"organizacion": "altiplano_docs"})
@@ -316,6 +444,38 @@ def main():
         assert (raiz / f"organizaciones/{oid}/documentos/ROF_2026.txt").read_text(encoding="utf-8") == "Artículo 1. Prueba."
         c, j = http("POST", "pims/documento", {"organizacion": "no_existe_x", "nombre": "a.txt", "texto": "x"})
         assert c == 404, (c, j)
+
+    @prueba("Perfil con documentos extensos y respuesta defectuosa → notas compactadas, cabecera y documentos corregidos, filas sin fuente como Supuesto")
+    def _():
+        import shutil
+        oid = f"perfil_grande_{int(time.time()) % 100000}"
+        base = raiz / "organizaciones" / oid
+        (base / "documentos").mkdir(parents=True)
+        cfg = json.loads((raiz / "organizaciones/_plantilla/config_organizacion.json").read_text(encoding="utf-8"))
+        cfg.update({"id_organizacion": oid, "organizacion": "Universidad de Prueba", "jurisdiccion": "peru"})
+        (base / "config_organizacion.json").write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
+        texto = "\n".join(f"Artículo {i}. La unidad {i} gestiona información institucional y registros." for i in range(1, 4500))
+        (base / "documentos" / "MOCK_NOTAS_LARGAS_A.md").write_text(texto, encoding="utf-8")
+        (base / "documentos" / "MOCK_NOTAS_LARGAS_B.md").write_text(texto, encoding="utf-8")
+        (base / "documentos" / "MOCK_PERFIL_SIN_FUENTES.md").write_text("Artículo 1. Documento breve.", encoding="utf-8")
+        try:
+            c, j = http("POST", "pims/perfilar", {"organizacion": oid})
+            assert c == 202, (c, j)
+            t = esperar(j["trabajo"], 300)
+            assert t["estado"] == "terminado", t
+            assert "Supuesto" in t["mensaje"] and "Se omitieron" in t["mensaje"], t["mensaje"]
+            val = json.loads((base / "validacion_perfil.json").read_text(encoding="utf-8"))
+            assert val["valido"] and len(val["ajustes_automaticos"]) == 3 and val["notas_recortadas"] > 0, val
+            perfil = (base / "perfil_organizacion.md").read_text(encoding="utf-8")
+            assert f"| Id | {oid} |" in perfil and "| D3 | MOCK_PERFIL_SIN_FUENTES |" in perfil
+            if A.log:
+                pedido = [json.loads(l) for l in open(A.log, encoding="utf-8") if "Redacta el perfil completo" in json.loads(l)["usuario"]][-1]
+                total = len(pedido["system"]) + len(pedido["usuario"])
+                assert total <= (32768 - 7000) * 3, f"el pedido final ({total} caracteres) no cabe en 32 768 tokens"
+                assert "### D1" in pedido["usuario"] and "### D2" in pedido["usuario"] and "### D3" in pedido["usuario"]
+            return f"{val['notas_recortadas']} notas omitidas; {len(val['ajustes_automaticos'])} ajustes"
+        finally:
+            shutil.rmtree(base, ignore_errors=True)
 
     @prueba("Renovaciones: GET calcula alertas con la fecha de hoy y omite los rechazados")
     def _():

@@ -68,11 +68,25 @@ def informe(nombre):
 
 
 def responder(system, usuario):
+    if system.startswith("Eres el asistente del Agente 7"):      # chat
+        pregunta = usuario.rsplit("Pregunta:", 1)[-1].strip()
+        ambito = "expediente" if "Contexto: expediente" in system else "organizacion"
+        n = system.count('"control":')
+        previas = usuario.count("Usuario:")
+        return (f"Respuesta simulada ({ambito}) a: {pregunta}\n\n- Controles en el contexto: {n} [Expediente]\n"
+                f"- Mensajes previos del usuario: {previas}")
+    if "Redacta el perfil completo" in usuario and "MOCK_PERFIL_SIN_FUENTES" in usuario:
+        # Como qwen2.5:7b con documentos reales: cabecera equivocada, un solo documento y §1 sin fuentes
+        return (PRUEBAS / "organizaciones_prueba" / "perfil_sin_fuentes.md").read_text(encoding="utf-8")
     if "Redacta el perfil completo" in usuario or "El perfil no pasa la validación" in usuario:
         return (PRUEBAS / "organizaciones_prueba" / "altiplano_con_perfil" / "perfil_organizacion.md").read_text(encoding="utf-8")
     m = re.search(r"\[DOCUMENTO (D\d+)", usuario)
     if m:
         d = m.group(1)
+        if "MOCK_NOTAS_LARGAS" in usuario:          # notas extensas: obligan a compactar antes del paso final
+            parte = re.search(r"parte (\d+) de", usuario).group(1)
+            return "\n".join(f"- Nota {parte}.{k} de {d}: unidad, proceso o tercero descrito con cierto detalle para ocupar espacio [{d}, p. {k}]"
+                             for k in range(1, 41))
         return f"§1\n- Razón social y domicilio [{d}, art. 1]\n§6\n- Proveedores mencionados [{d}, p. 1]"
     if "[CONTRATO" in usuario:
         caso = next((v for k, v in UNSA.items() if k in usuario), None)
@@ -84,8 +98,22 @@ def responder(system, usuario):
         if not nombre:
             return "No reconozco este contrato (modelo simulado)."
         r = resultado_modelo(nombre)
+        if "MOCK:JSON_ROTO_SIEMPRE" in usuario:   # falla también tras la corrección
+            r.pop("controles")
+            return f"```json\n{json.dumps(r, ensure_ascii=False, indent=2)}\n```"
         if "no cumple el esquema" in usuario:      # petición de corrección
             return f"```json\n{json.dumps(r, ensure_ascii=False, indent=2)}\n```"
+        if "MOCK:JSON_ABREVIADO" in usuario:      # como un modelo pequeño: un control y comentarios // ...
+            r["controles"] = r["controles"][:1]
+            j = json.dumps(r, ensure_ascii=False, indent=2).replace('}\n  ],\n  "alertas"', '},\n    // ... (repetir para los demás controles)\n  ],\n  "alertas"')
+            return f"{informe(nombre)}\n\n```json\n{j}\n```"
+        if "MOCK:SIN_CONTROLES" in usuario:      # como qwen2.5:7b en el caso UNSA 03: "controles": [ // ... ]
+            r["controles"] = []
+            j = json.dumps(r, ensure_ascii=False, indent=2).replace('"controles": []', '"controles": [\n    // ... (repetir para los 24 controles)\n  ]')
+            return f"{informe(nombre)}\n\n```json\n{j}\n```"
+        if "MOCK:IDS_ADORNADOS" in usuario:       # como qwen2.5:7b: "A.2.2.2 🅰", fila A.1.2.7 y null en un opcional
+            r["controles"] = [dict(r["controles"][0], control="A.1.2.7 🅰")] + [dict(c, control=c["control"] + " 🅰") for c in r["controles"]]
+            r.setdefault("uso_ia", {"detectado": "No indicado"})["evidencia_gobernanza_ia"] = None
         if "MOCK:JSON_ROTO" in usuario:
             r.pop("controles")
         return f"{informe(nombre)}\n\n```json\n{json.dumps(r, ensure_ascii=False, indent=2)}\n```"
@@ -102,9 +130,13 @@ class H(BaseHTTPRequestHandler):
         ruta = self.path.rstrip("/")
         if ruta.endswith("/api/chat"):
             msgs = cuerpo.get("messages", [])
-            system = next((m["content"] for m in msgs if m["role"] == "system"), "")
-            usuario = next((m["content"] for m in msgs if m["role"] == "user"), "")
+            system = next((m.get("content", "") for m in msgs if m["role"] == "system"), "")
+            usuario = next((m.get("content", "") for m in msgs if m["role"] == "user"), "")
             texto = responder(system, usuario)
+            if cuerpo.get("format"):
+                # Como Ollama con salida estructurada: solo el JSON, sin bloque ```json ni texto.
+                m = re.search(r"```json\n(.*?)\n```", texto, re.S)
+                texto = m.group(1) if m else texto
             salida = {"model": cuerpo.get("model"), "message": {"role": "assistant", "content": texto}, "done": True, "done_reason": "stop"}
             prov = "ollama"
         elif ruta.endswith("/v1/messages"):
@@ -118,8 +150,8 @@ class H(BaseHTTPRequestHandler):
             prov = "anthropic"
         elif ruta.endswith("/chat/completions"):
             msgs = cuerpo.get("messages", [])
-            system = next((m["content"] for m in msgs if m["role"] == "system"), "")
-            usuario = next((m["content"] for m in msgs if m["role"] == "user"), "")
+            system = next((m.get("content", "") for m in msgs if m["role"] == "system"), "")
+            usuario = next((m.get("content", "") for m in msgs if m["role"] == "user"), "")
             texto = responder(system, usuario)
             salida = {"choices": [{"index": 0, "message": {"role": "assistant", "content": texto}, "finish_reason": "stop"}],
                       "model": cuerpo.get("model")}
@@ -134,6 +166,8 @@ class H(BaseHTTPRequestHandler):
         if LOG:
             with _lock, open(LOG, "a", encoding="utf-8") as fh:
                 fh.write(json.dumps({"proveedor": prov, "modelo": cuerpo.get("model") or cuerpo.get("modelo"),
+                                     "con_esquema": isinstance(cuerpo.get("format"), dict),
+                                     "formato": ("esquema" if isinstance(cuerpo.get("format"), dict) else cuerpo.get("format")),
                                      "system_chars": len(system), "system": system, "usuario": usuario}, ensure_ascii=False) + "\n")
         self._enviar(200, salida)
 
@@ -154,6 +188,7 @@ def main():
     a = ap.parse_args()
     LOG = a.log
     print(f"Modelo simulado escuchando en http://127.0.0.1:{a.puerto} (Ollama: /api/chat · Anthropic: /v1/messages · OpenAI: /v1/chat/completions)")
+    ThreadingHTTPServer.request_queue_size = 128   # n8n envía muchas peticiones a la vez (notas del perfil)
     ThreadingHTTPServer(("127.0.0.1", a.puerto), H).serve_forever()
 
 

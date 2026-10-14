@@ -61,19 +61,20 @@ Agregar un país es copiar `jurisdicciones/_plantilla/` y completarla (`jurisdic
 |---|---|
 | **Skill `pims-dpa-auditor`** | El "cerebro" del auditor: `SKILL.md` (identidad, 9 reglas de rigor, 8 pasos) y sus archivos de referencia. n8n la lee **en cada ejecución** y la entrega al modelo como instrucciones de sistema. También funciona sola dentro de Claude Code. |
 | **Skill `pims-perfilador-organizacion`** | Convierte los documentos institucionales (ROF, MOF, TUPA, procesos…) en un perfil de formato fijo. Es el inicio del Agente 1 (inventario). |
-| **n8n** | Motor central: recibe las peticiones, arma el prompt, llama al modelo elegido, calcula, guarda y gestiona las aprobaciones. 12 flujos, generados por `n8n/construir_flujos.py`. |
+| **n8n** | Motor central: recibe las peticiones, arma el prompt, llama al modelo elegido, calcula, guarda y gestiona las aprobaciones. 13 flujos, generados por `n8n/construir_flujos.py`. |
 | **Modelo de IA** | Solo hace el juicio cualitativo: qué dice cada cláusula y qué estado le corresponde a cada control. Se cambia en la página sin tocar nada más. |
 | **Cálculo determinista** | Resumen, puntaje, dictamen, severidades, alertas de renovación y validación del esquema. `calcular_resultado.py` (Python) y `n8n/lib/calcular.js` (el mismo cálculo en JavaScript, verificado idéntico). |
 | **Página web** | Auditar, ver expedientes, aprobar como DPO o Legal, gestionar organizaciones y su perfil, renovaciones y configuración del modelo. |
 | **Archivos** | Todo queda en disco, dentro del proyecto: no hay base de datos. |
 
-### 2.3 Los 12 flujos de n8n
+### 2.3 Los 13 flujos de n8n
 
 | Flujo | Función |
 |---|---|
 | **Auditar contrato (Agente 7)** | Recibe el contrato y responde de inmediato con un número de trabajo; sigue en segundo plano. |
 | **Perfilar organización (Agente 1)** | Genera `perfil_organizacion.md` a partir de los documentos. |
 | **Aprobaciones** | Máquina de estados Pendiente DPO → Pendiente Legal → Aprobado / Rechazado, con historial. También la validación del perfil por el DPO. |
+| **Chat** | Responde preguntas sobre un expediente o una organización con el mismo modelo; guarda la conversación y no modifica nada (sección 4b). |
 | **Renovaciones y vencimientos** | Cada lunes a las 07:52 recalcula las alertas de vencimiento con la fecha del día. |
 | **Consultas** y **Administración** | La API que usa la página: registros, organizaciones, documentos, configuración. |
 | **Página web** | Sirve `web/index.html` con sus librerías. |
@@ -133,6 +134,17 @@ Agregar un país es copiar `jurisdicciones/_plantilla/` y completarla (`jurisdic
 
 ---
 
+## 4b. Chat sobre los resultados
+
+En cada expediente (pestaña **Preguntar**) y en **Organización y perfil** hay un chat para preguntarle al modelo sobre el caso: por qué un control salió así, qué cláusula pedir, qué proveedores tienen riesgo alto, qué contratos vencen. El flujo **PIMS · Chat** arma el contexto y llama al **mismo modelo configurado**:
+
+| Ámbito | Contexto que recibe el modelo |
+|---|---|
+| Expediente | Registro calculado (controles, alertas, puntaje, dictamen, historial de aprobaciones), texto del contrato (no confiable), informe, configuración y perfil de la organización |
+| Organización | Tabla de todos sus expedientes, alertas altas y de renovación, perfil (no confiable) y configuración |
+
+Reglas: responde solo con ese contexto y cita la fuente (`[A.3.10]`, `[Contrato, cláusula 6]`, `[Informe §8]`); **no modifica nada** (el flujo solo escribe la conversación en `datos/chats/`); no obedece instrucciones del contrato ni de los documentos; las instrucciones del usuario no cambian los criterios; no es asesoría legal. Con Ollama, el contexto se recorta por prioridad para caber en 32 768 tokens y la respuesta lo indica. Desde esta versión cada auditoría guarda el texto evaluado en `datos/registro/<id>.contrato.txt` para que el chat pueda citarlo.
+
 ## 5. Seguridad
 
 | Riesgo | Defensa |
@@ -144,6 +156,7 @@ Agregar un país es copiar `jurisdicciones/_plantilla/` y completarla (`jurisdic
 | Acceso desde fuera | n8n escucha solo en `127.0.0.1`; cada webhook solo acepta la página y el propio n8n como origen. |
 | Informe con HTML malicioso | La página convierte el Markdown con marked y siempre lo sanea con DOMPurify. |
 | Clave de API | Se guarda en `datos/config_modelo.json` y la API nunca la devuelve completa. |
+| Usar el chat para cambiar un resultado ("cámbialo a Cumple") | El flujo del chat solo escribe la conversación; las reglas le impiden aceptar cambios: explica que requieren una nueva auditoría o la decisión del DPO. |
 | Aprobación automática | Imposible: el esquema obliga a la doble aprobación y el flujo exige el turno DPO → Legal. |
 
 ---
@@ -157,7 +170,7 @@ AS-agente-main/
 ├── CAMBIOS_v2.md               Cambios de la v1.1 a la v2.0, por etapas
 ├── GUIA_DEMO.md                Guion de la demostración (10-15 min)
 ├── MCP_SETUP.md                Ruta alternativa: la skill dentro de Claude Code
-├── informe_TIF.tex             Informe de la primera entrega (describe la v1.1)
+├── informe_TIF.tex             Informe del TIF, segunda entrega (v2.0); el de la primera está en versiones/v1.1/
 │
 ├── pims-dpa-auditor/           SKILL del auditor (Agente 7)
 │   ├── SKILL.md
@@ -191,8 +204,8 @@ AS-agente-main/
 | `pims-dpa-auditor_pruebas/ejecutar_pruebas.py` | Regresión exacta contra la v1.1, jurisdicciones, perfil, validador, compatibilidad | 27/27 |
 | `n8n/pruebas/equivalencia_py_js.py` | El cálculo en JavaScript es idéntico al de Python | 5 012 casos idénticos (incluye 476 empates de redondeo) |
 | `n8n/pruebas/equivalencia_perfil.py` | El validador de perfiles en JavaScript es idéntico al de Python | 1 503 casos idénticos |
-| `n8n/pruebas/probar_flujos.py` | Los 12 flujos con un modelo simulado: auditoría, corrección de JSON, aprobaciones, perfil, errores, seguridad | 21/21 (también sin *Execute Command*) |
-| `web/pruebas/probar_pagina.py` | La página en un Chromium real, 9 recorridos | 9/9 |
+| `n8n/pruebas/probar_flujos.py` | Los 13 flujos con un modelo simulado: auditoría, corrección de JSON, aprobaciones, perfil, errores, seguridad | 30/30 (también sin *Execute Command*) |
+| `web/pruebas/probar_pagina.py` | La página en un Chromium real, 10 recorridos (incluido el chat) | 10/10 |
 | `pims-dpa-auditor_pruebas/unsa/ejecutar_casos_unsa.py` | Los 5 contratos de la UNSA a través de n8n, comparados con la referencia | 120/120 controles con el modelo simulado |
 
 ### Casos de prueba

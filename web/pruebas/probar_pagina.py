@@ -116,6 +116,23 @@ def main():
             return f"{d1.value.suggested_filename} y {d2.value.suggested_filename}"
         paso("Descargar informe (.md) y registro (.json) desde el sandbox", descargas)
 
+        def chat_expediente():
+            pg.click(".pestanas button[data-p='chat']")
+            pg.wait_for_selector(".chat .chat-sugerencias button", timeout=10000)
+            pg.click(".chat .chat-sugerencias button >> nth=0")
+            pg.wait_for_selector(".msg.asistente:not(.pensando) >> text=Respuesta simulada (expediente)", timeout=60000)
+            pg.fill(".chat-form textarea", "¿Qué cláusula le pido al proveedor?")
+            pg.press(".chat-form textarea", "Control+Enter")
+            pg.wait_for_function("document.querySelectorAll('.chat .msg:not(.pensando)').length === 4", timeout=60000)
+            assert "Mensajes previos del usuario: 1" in pg.inner_text(".chat-lista")
+            pg.screenshot(path=str(cap / "11_chat_expediente.png"), full_page=False)
+            # Al volver al expediente, la conversación sigue ahí (la guarda n8n)
+            pg.click(".pestanas button[data-p='informe']")
+            pg.click(".pestanas button[data-p='chat']")
+            pg.wait_for_function("document.querySelectorAll('.chat .msg').length === 4", timeout=10000)
+            return "2 preguntas; la conversación persiste"
+        paso("Chat del expediente: sugerencia, pregunta con Ctrl+Enter e historial", chat_expediente)
+
         def docx_y_bandeja():
             pg.click(".roles button[data-rol='DPO']")
             pg.select_option("#org", "altiplano_perfil")
@@ -145,8 +162,11 @@ def main():
             pg.wait_for_selector(".estado.aprobado", timeout=20000)
             pg.click("details summary:has-text('Ver el perfil completo')")
             pg.screenshot(path=str(cap / "07_organizacion_perfil.png"), full_page=True)
-            return pg.inner_text(".estado.aprobado")
-        paso("Organización: generar perfil desde documentos y validarlo como DPO", organizacion)
+            pg.fill("#o-chat textarea", "¿Qué proveedores tienen riesgo alto?")
+            pg.click("#o-chat button[type=submit]")
+            pg.wait_for_selector("#o-chat .msg.asistente:not(.pensando) >> text=Respuesta simulada (organizacion)", timeout=60000)
+            return pg.inner_text(".estado.aprobado") + " · chat de la organización respondió"
+        paso("Organización: generar perfil, validarlo como DPO y preguntar en el chat", organizacion)
 
         def crear_org():
             oid = f"pagina_{int(time.time()) % 100000}"

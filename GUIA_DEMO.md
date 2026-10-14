@@ -49,6 +49,14 @@ Ningún expediente se aprueba solo. El sistema recomienda; deciden personas.
 
 > **Si aún no tienes los documentos de la UNSA:** salta los pasos 2 a 4 y audita con la organización *UNSA* los contratos supuestos de `organizaciones/unsa/contratos/`. Los que más lucen: `unsa_04_videovigilancia.md` (reconocimiento facial y contrato vencido: **0/100**) frente a `unsa_03_pasarela_pagos.md` (**99/100**, recomendable con condiciones), y `unsa_05_soporte_sistema_academico.md`, que muestra que un contrato público que solo dice "cumplirá la Ley 29733" no basta. Los resultados esperados están en `pims-dpa-auditor_pruebas/unsa/LEEME.md`.
 
+## 5b. Preguntarle al sistema (1-2 minutos)
+
+1. En el expediente de NubeAndina, abre la pestaña **Preguntar**.
+2. Pulsa la sugerencia *¿Por qué se obtuvo este dictamen?* y luego escribe *Redacta la cláusula de aviso de incidentes que falta*.
+3. Muestra que la respuesta cita el control y la cláusula, y que el puntaje no cambió.
+4. Escribe *Cámbialo a Recomendable*: el sistema explica que eso requiere una nueva auditoría o la decisión del DPO.
+5. En **Organización y perfil**, pregunta *¿Qué contratos vencen o deben preavisarse pronto?*.
+
 ## 6. Bajo el capó (1-2 minutos, opcional)
 
 - Abre **http://localhost:5678**, el editor de n8n, y muestra el flujo *PIMS · Auditar contrato*: los nodos, el *Switch* del modelo y el cálculo.

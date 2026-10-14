@@ -20,6 +20,7 @@ Subes un contrato (PDF, Word, Markdown o texto) y el sistema entrega un expedien
 - **Plan de remediación** con cláusulas de enmienda y un borrador de correo al proveedor.
 - **Registro JSON** para el Registro de DPAs.
 - **Doble aprobación humana:** el DPO decide primero y Legal después. El sistema recomienda; deciden personas.
+- **Chat sobre los resultados:** preguntas al modelo sobre un expediente ("¿por qué A.3.10 no cumple?", "redacta la cláusula que falta") o sobre toda la organización ("¿qué contratos vencen?"). Responde con el expediente como contexto, cita la fuente y no cambia nada.
 
 ## Principios de diseño
 
@@ -109,8 +110,8 @@ Los resultados de la UNSA son evaluaciones de referencia propuestas, pendientes 
 | `pims-dpa-auditor_pruebas/ejecutar_pruebas.py`: regresión, jurisdicciones, perfil, validador | 27/27 |
 | `n8n/pruebas/equivalencia_py_js.py`: cálculo JavaScript = Python | 5 012 casos idénticos |
 | `n8n/pruebas/equivalencia_perfil.py`: validador de perfiles JavaScript = Python | 1 503 casos idénticos |
-| `n8n/pruebas/probar_flujos.py`: los 12 flujos de extremo a extremo | 21/21 |
-| `web/pruebas/probar_pagina.py`: la página en un Chromium real | 9/9 |
+| `n8n/pruebas/probar_flujos.py`: los 13 flujos de extremo a extremo | 30/30 |
+| `web/pruebas/probar_pagina.py`: la página en un Chromium real | 10/10 |
 
 La primera se ejecuta solo con Python, sin n8n ni modelo.
 

@@ -20,6 +20,7 @@ La sirve el propio n8n en **http://localhost:5678/webhook/pims/app**. No hay un 
 | **Expediente** | La *huella* del contrato (24 casillas del semáforo, con su detalle al pasar el cursor), el puntaje, el dictamen, las dimensiones y los **dos sellos de la doble puerta**. Tiene pestañas de informe, alertas, historial y JSON, y permite descargar el `.md` y el `.json` o imprimir. |
 | **Por aprobar** | La bandeja del rol elegido en el riel, DPO o Legal. El contador muestra cuántos expedientes esperan su decisión. |
 | **Organización y perfil** | Subir documentos institucionales, generar el perfil, validarlo como DPO, ver los terceros del perfil sin DPA evaluado (con un botón para auditarlos) y crear organizaciones nuevas. |
+| **Preguntar** (pestaña del expediente y sección de *Organización y perfil*) | Chat con el modelo sobre el expediente o la organización, con sugerencias de preguntas. Las respuestas citan su fuente y la conversación queda guardada. El chat no cambia calificaciones ni aprueba. |
 | **Renovaciones** | Contratos que vencen o cuyo plazo de preaviso llega pronto, calculados con la fecha de hoy. |
 | **Configuración** | Elegir el modelo (Claude Code, Ollama, Anthropic o API compatible con OpenAI) y ver las jurisdicciones disponibles. |
 
@@ -50,4 +51,4 @@ Necesita n8n con los flujos instalados, el modelo simulado configurado y `pip in
 - renovaciones, configuración y vista móvil sin desplazamiento horizontal;
 - consola sin errores de JavaScript.
 
-Resultado: **9/9 en tres corridas seguidas**. Las pruebas encontraron y corrigieron dos carreras reales entre pantallas, cuando una respuesta tardía pisaba la pantalla nueva o borraba un formulario a medio llenar.
+Resultado: **10/10** (el décimo recorrido es el chat; antes, 9/9 en tres corridas seguidas). Las pruebas encontraron y corrigieron dos carreras reales entre pantallas, cuando una respuesta tardía pisaba la pantalla nueva o borraba un formulario a medio llenar.

@@ -221,6 +221,22 @@ pre.json { max-height: 560px; overflow: auto; font-size: 0.8rem; background: #F4
 .pasos li.actual { color: var(--tinta); font-weight: 700; } .pasos li.actual::before { content: "◐"; color: var(--sello); animation: girar 1.4s linear infinite; display: inline-block; }
 .pasos li.error { color: var(--rojo); font-weight: 700; } .pasos li.error::before { content: "✕"; }
 @keyframes girar { to { transform: rotate(360deg); } }
+/* Chat: preguntas al modelo sobre el expediente o la organización */
+.chat { display: grid; gap: var(--s3); max-width: 860px; }
+.chat-lista { display: grid; gap: var(--s3); }
+.msg { padding: var(--s3) var(--s4); border-radius: 8px; max-width: 92%; }
+.msg.usuario { justify-self: end; background: var(--sello-claro); border: 1px solid #D9D0F2; }
+.msg.asistente { justify-self: start; background: #fff; border: 1px solid var(--borde-suave); }
+.msg .meta { display: block; font-size: 0.75rem; color: var(--tinta-3); margin-bottom: 4px; }
+.msg.asistente .informe { max-width: none; }
+.msg.asistente .informe p:first-child { margin-top: 0; }
+.msg.pensando .meta::after { content: " ◐"; color: var(--sello); display: inline-block; animation: girar 1.4s linear infinite; }
+.chat-sugerencias { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.chat-sugerencias button { background: #fff; border: 1px solid var(--borde); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 0.85rem; color: var(--tinta-2); cursor: pointer; }
+.chat-sugerencias button:hover { border-color: var(--sello); color: var(--tinta); }
+.chat-form { display: grid; gap: var(--s2); }
+.chat-form textarea { min-height: 72px; font-family: var(--letra); font-size: 0.95rem; }
+.chat-form .acciones { display: flex; gap: var(--s3); align-items: center; flex-wrap: wrap; }
 .alerta { border-left: 4px solid var(--rojo); background: #FBEFEE; padding: var(--s3) var(--s4); border-radius: 0 4px 4px 0; }
 .alerta.media { border-color: var(--ambar); background: #FBF4E6; }
 .alerta.info { border-color: var(--sello); background: var(--sello-claro); }
@@ -298,7 +314,7 @@ pre.json { max-height: 560px; overflow: auto; font-size: 0.8rem; background: #F4
    n8n la sirve aislada (CSP sandbox): no hay localStorage, el estado vive en n8n.
    ========================================================================== */
 const API = '/webhook/pims/';
-const E = { turno: 0, orgs: [], org: null, rol: 'DPO', usuario: '', vista: 'auditar', estado: null, trabajos: {}, registros: [], expediente: null };
+const E = { turno: 0, orgs: [], org: null, rol: 'DPO', usuario: '', vista: 'auditar', estado: null, trabajos: {}, registros: [], expediente: null, chats: {} };
 
 /* ----------------------------------------------------------------- utilidades */
 const $ = (s, r = document) => r.querySelector(s);
@@ -657,7 +673,7 @@ function vExpediente() {
       <label class="campo">Comentario para el historial <small>Opcional</small><textarea id="d-com" placeholder="${E.rol === 'DPO' ? 'p. ej. Aprobado sujeto a las enmiendas de la sección 8' : 'p. ej. Firma autorizada con la adenda'}"></textarea></label>
       <div class="acciones"><button class="btn violeta" id="d-ok">Aprobar como ${esc(E.rol)}</button><button class="btn peligro" id="d-no">Rechazar</button></div>
     </div>` : `<p class="nota no-imprimir" style="margin-top:16px">${['Aprobado', 'Rechazado'].includes(ap.estado) ? `Expediente cerrado: ${esc(ap.estado.toLowerCase())}.` : `Le corresponde decidir a ${esc(ap.estado.replace('Pendiente ', ''))}. Tú decides como ${esc(E.rol)}.`}</p>`}
-    <div class="pestanas no-imprimir" role="tablist">${[['informe', 'Informe'], ['alertas', `Alertas (${(r.alertas || []).length})`], ['historial', `Historial (${hist.length})`], ['json', 'Registro JSON']].map(([k, t]) => `<button role="tab" aria-selected="${x.pestana === k}" data-p="${k}">${t}</button>`).join('')}</div>
+    <div class="pestanas no-imprimir" role="tablist">${[['informe', 'Informe'], ['alertas', `Alertas (${(r.alertas || []).length})`], ['historial', `Historial (${hist.length})`], ['chat', 'Preguntar'], ['json', 'Registro JSON']].map(([k, t]) => `<button role="tab" aria-selected="${x.pestana === k}" data-p="${k}">${t}</button>`).join('')}</div>
     <div id="x-cuerpo"></div>
     <div class="acciones no-imprimir" style="margin-top:24px">
       <button class="btn sec" id="x-md">Descargar informe (.md)</button><button class="btn sec" id="x-json">Descargar registro (.json)</button><button class="btn sec" onclick="window.print()">Imprimir</button>
@@ -666,6 +682,8 @@ function vExpediente() {
   const cuerpo = $('#x-cuerpo');
   const mostrar = () => {
     if (x.pestana === 'informe') cuerpo.innerHTML = `<div class="informe">${markdown(x.informe)}</div>`;
+    else if (x.pestana === 'chat') montarChat(cuerpo, { ambito: 'expediente', id: x.id,
+      organizacion: (r.organizacion || {}).id || (r._registro || {}).organizacion || E.org, nombre: (r.tercero || {}).nombre || 'el expediente' });
     else if (x.pestana === 'json') cuerpo.innerHTML = `<pre class="json">${esc(JSON.stringify(r, null, 2))}</pre>`;
     else if (x.pestana === 'alertas') cuerpo.innerHTML = (r.alertas || []).length ? `<div class="lista-alertas">${r.alertas.map((a) => `<div class="alerta ${a.prioridad === 'Alta' ? '' : 'media'}"><b>${esc(a.prioridad)} · ${esc(a.tipo)}</b> — ${esc(a.descripcion)}${a.controles_relacionados ? ` <span class="nota">(${esc(a.controles_relacionados.join(', '))})</span>` : ''}</div>`).join('')}</div>` : '<p class="vacio">Sin alertas.</p>';
     else cuerpo.innerHTML = hist.length ? `<table class="tabla"><thead><tr><th>Fecha</th><th>Quién</th><th>Decisión</th><th>Comentario</th></tr></thead><tbody>${hist.map((h) => `<tr><td>${esc(fecha(h.fecha))} ${esc(hora(h.fecha))}</td><td>${esc(h.cargo)}<div class="nota">${esc(h.usuario)}</div></td><td>${h.decision === 'aprobar' ? 'Aprobó' : 'Rechazó'}<div class="nota">${esc(h.estado_anterior)} → ${esc(h.estado_nuevo)}</div></td><td>${esc(h.comentario || '—')}</td></tr>`).join('')}</tbody></table>` : '<p class="vacio">Nadie ha decidido todavía. El primer paso es del DPO.</p>';
@@ -687,6 +705,76 @@ function vExpediente() {
     } catch (e) { avisar(e.message, 'error'); $$('.decidir button').forEach((b) => { b.disabled = false; }); }
   };
   if (turno) { $('#d-ok').onclick = () => decidir('aprobar'); $('#d-no').onclick = () => decidir('rechazar'); }
+}
+
+/* =============================================================================
+   Chat: preguntas al modelo sobre un expediente o una organización.
+   El modelo solo lee el contexto; no cambia calificaciones ni aprueba (lo hace cumplir n8n).
+   ========================================================================== */
+const SUGERENCIAS = {
+  expediente: ['¿Por qué se obtuvo este dictamen?', '¿Qué controles críticos fallan y por qué?', 'Redacta la cláusula de aviso de incidentes que falta',
+    '¿Qué debería revisar el DPO antes de aprobar?'],
+  organizacion: ['¿Qué proveedores tienen riesgo alto?', '¿Qué contratos vencen o deben preavisarse pronto?', '¿Qué expedientes esperan aprobación?',
+    '¿Qué procesos tratan datos sensibles según el perfil?'],
+};
+async function montarChat(caja, ctx) {
+  if (!caja) return;
+  const clave = `${ctx.ambito}:${ctx.id}`;
+  const st = E.chats[clave] = E.chats[clave] || { mensajes: null, pendiente: null };
+  caja.innerHTML = `<div class="chat" data-clave="${esc(clave)}">
+    <p class="nota">El modelo responde con ${ctx.ambito === 'expediente' ? 'el contrato, el informe y la matriz de este expediente' : 'el perfil, la configuración y los expedientes de la organización'} como contexto, y cita de dónde sale cada dato. No cambia calificaciones ni aprueba: eso sigue en manos del DPO y de Legal. No es asesoría legal.</p>
+    <div class="chat-lista" aria-live="polite"></div>
+    <div class="chat-sugerencias">${SUGERENCIAS[ctx.ambito].map((s) => `<button type="button">${esc(s)}</button>`).join('')}</div>
+    <form class="chat-form">
+      <label class="campo"><span class="sr">Pregunta</span><textarea placeholder="Escribe tu pregunta sobre ${esc(ctx.nombre)}…" maxlength="4000"></textarea></label>
+      <div class="acciones"><button class="btn violeta" type="submit">Preguntar</button><span class="nota">Ctrl + Enter para enviar. Con un modelo local la respuesta puede tardar unos minutos.</span></div>
+    </form></div>`;
+  const raiz = caja.querySelector('.chat'), lista = raiz.querySelector('.chat-lista'), form = raiz.querySelector('form'), area = form.querySelector('textarea');
+  const enPantalla = () => document.body.contains(raiz);
+  const dibujar = () => {
+    if (!enPantalla()) return;
+    const ms = st.mensajes || [];
+    lista.innerHTML = (ms.length ? ms : st.pendiente ? [] : [null]).map((m) => !m ? '<p class="vacio">Todavía no hay preguntas.</p>'
+      : m.rol === 'usuario'
+        ? `<div class="msg usuario"><span class="meta">${esc(m.usuario || 'Usuario')} · ${esc(fecha(m.fecha))} ${esc(hora(m.fecha))}</span>${esc(m.texto)}</div>`
+        : `<div class="msg asistente"><span class="meta">${esc(m.modelo || 'Modelo')} · ${esc(hora(m.fecha))}${m.contexto_recortado ? ' · contexto recortado para caber en el modelo' : ''}${m.truncado ? ' · respuesta cortada' : ''}</span><div class="informe">${markdown(m.texto)}</div></div>`).join('')
+      + (st.pendiente ? `<div class="msg usuario"><span class="meta">${esc(E.usuario || 'Usuario')}</span>${esc(st.pendiente.pregunta)}</div>
+        <div class="msg asistente pensando"><span class="meta">${st.pendiente.error ? 'Error' : `Pensando… ${Math.round((Date.now() - st.pendiente.t0) / 1000)} s`}</span>${st.pendiente.error ? `<p class="alerta">${esc(st.pendiente.error)}</p>` : ''}</div>` : '');
+    form.querySelector('button').disabled = !!(st.pendiente && !st.pendiente.error);
+  };
+  const recargar = async () => {
+    try { st.mensajes = (await api('GET', `chat?ambito=${ctx.ambito}&id=${encodeURIComponent(ctx.id)}`)).mensajes; }
+    catch (e) { st.mensajes = st.mensajes || []; avisar(e.message, 'error'); }
+    dibujar();
+  };
+  const seguir = async () => {
+    const p = st.pendiente;
+    if (!p || p.error) return;
+    try {
+      const t = await api('GET', `trabajo?id=${p.trabajo}`);
+      if (t.estado === 'terminado') { st.pendiente = null; await recargar(); return; }
+      if (t.estado === 'error') { p.error = t.mensaje || 'No se pudo responder.'; dibujar(); return; }
+    } catch (e) { if (e.codigo !== 404) p.error = e.message; }
+    dibujar();
+    if (!p.error) setTimeout(seguir, 2000);
+  };
+  const enviar = async (pregunta) => {
+    pregunta = pregunta.trim();
+    if (!pregunta || (st.pendiente && !st.pendiente.error)) return;
+    st.pendiente = { pregunta, t0: Date.now() };
+    area.value = '';
+    dibujar();
+    try {
+      const r = await api('POST', 'chat', { ambito: ctx.ambito, id: ctx.id, organizacion: ctx.organizacion, pregunta, usuario: E.usuario });
+      st.pendiente.trabajo = r.trabajo;
+      setTimeout(seguir, 1500);
+    } catch (e) { st.pendiente.error = e.message; dibujar(); }
+  };
+  form.onsubmit = (e) => { e.preventDefault(); enviar(area.value); };
+  area.onkeydown = (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); enviar(area.value); } };
+  raiz.querySelectorAll('.chat-sugerencias button').forEach((b) => { b.onclick = () => enviar(b.textContent); });
+  if (st.mensajes === null) await recargar(); else dibujar();
+  if (st.pendiente && st.pendiente.trabajo && !st.pendiente.error) { const tic = () => { dibujar(); if (st.pendiente && enPantalla()) setTimeout(tic, 1000); }; tic(); }
 }
 
 /* =============================================================================
@@ -736,6 +824,7 @@ async function vOrganizacion() {
         <table class="tabla" style="margin-top:8px"><tbody>${brechas.map((b) => `<tr><td>${esc(b)}</td><td class="num"><button class="btn sec" data-audit="${esc(b)}">Auditar</button></td></tr>`).join('')}</tbody></table>` : ''}
     </section>
   </div>
+  <section class="hoja bloque" style="margin-top:24px"><h2>Preguntar sobre ${esc(o.nombre)}</h2><div id="o-chat"></div></section>
   ${perfil && (perfil.texto || perfil.borrador_invalido) ? `<details class="hoja" style="margin-top:24px"><summary><b>Ver el perfil completo</b></summary><div class="informe" style="margin-top:12px">${markdown(perfil.texto || perfil.borrador_invalido)}</div>
     ${v && v.errores.length ? `<h3>Errores de formato</h3><ul>${v.errores.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}</details>` : ''}` : ''}
   <details class="hoja" style="margin-top:24px" ${o ? '' : 'open'}><summary><b>Crear otra organización</b></summary>
@@ -752,6 +841,7 @@ async function vOrganizacion() {
       <div class="acciones"><button class="btn" type="submit">Crear organización</button><span class="nota">Usa la política interna por defecto; revísala con el DPO en su config_organizacion.json.</span></div>
     </form></details>`;
   if (o) {
+    montarChat($('#o-chat'), { ambito: 'organizacion', id: o.id, organizacion: o.id, nombre: o.nombre });
     const zona = $('#o-soltar'), ent = $('#o-archivos');
     const subir = async (files) => {
       for (const f of files) {
@@ -831,8 +921,9 @@ async function vConfiguracion() {
       <label class="campo">Proveedor <select name="proveedor">${Object.entries(PROV).map(([k, t]) => `<option value="${k}" ${m.proveedor === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <label class="campo">Modelo <small id="c-ayuda"></small><input type="text" name="modelo" value="${esc(m.modelo || '')}"></label>
     </div>
-    <div class="fila" data-para="ollama"><label class="campo">URL de Ollama <input type="text" name="url_ollama" value="${esc(m.url_ollama || 'http://localhost:11434')}"></label>
-      <label class="campo">Contexto (num_ctx) <small>El prompt de auditoría ocupa unos 20 000 tokens; usa 32 768 o más.</small><input type="number" name="num_ctx" value="${esc(m.num_ctx || 49152)}"></label></div>
+    <div class="fila" data-para="ollama"><label class="campo">URL de Ollama <input type="text" name="url_ollama" value="${esc(m.url_ollama || 'http://127.0.0.1:11434')}"></label>
+      <label class="campo">Contexto (num_ctx) <small>Instrucciones (~20 000 tokens) + respuesta: 40 960 o más.</small><input type="number" name="num_ctx" value="${esc(m.num_ctx || 49152)}"></label></div>
+    <div class="fila" data-para="ollama"><label class="campo">Corrección del JSON <small>Si el primer JSON no cumple el esquema, cómo se restringe la segunda respuesta.</small><select name="formato_correccion">${[['json', 'JSON válido (rápido, recomendado)'], ['esquema', 'Esquema completo (más estricto, puede ser muy lento)'], ['ninguno', 'Sin restricción']].map(([k, t]) => `<option value="${k}" ${(m.formato_correccion || 'json') === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>
     <div class="fila" data-para="anthropic"><label class="campo">URL de Anthropic <input type="text" name="url_anthropic" value="${esc(m.url_anthropic || 'https://api.anthropic.com')}"></label></div>
     <div class="fila" data-para="openai"><label class="campo">URL base <input type="text" name="url_openai" value="${esc(m.url_openai || 'https://api.openai.com/v1')}"></label></div>
     <div class="fila" data-para="anthropic openai"><label class="campo">API key <small>${m.api_key ? `Guardada (${esc(m.api_key)}). Déjala así para conservarla.` : 'Se guarda en datos/config_modelo.json, solo en este equipo.'}</small><input type="password" name="api_key" value="${esc(m.api_key || '')}" autocomplete="off"></label></div>

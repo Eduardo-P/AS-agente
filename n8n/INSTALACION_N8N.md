@@ -52,7 +52,7 @@ n8n\iniciar_n8n.bat
 ```
 
 4. La primera vez, abre **http://localhost:5678** y crea la cuenta de propietario de n8n. Es local.
-5. Verás 12 flujos **PIMS · …** publicados.
+5. Verás 13 flujos **PIMS · …** publicados.
 6. Abre la página: **http://localhost:5678/webhook/pims/app**. Para comprobar solo la API: http://localhost:5678/webhook/pims/estado debe responder `{"ok":true,"version":"2.0",…}`.
 
 **Arranca siempre con `iniciar_n8n.bat`**, no con `n8n start` a secas, porque el script fija:
@@ -81,7 +81,7 @@ Invoke-RestMethod -Method Post -Uri http://localhost:5678/webhook/pims/config -C
 
 # Ollama local
 Invoke-RestMethod -Method Post -Uri http://localhost:5678/webhook/pims/config -ContentType application/json `
-  -Body '{"proveedor":"ollama","modelo":"qwen2.5:14b","url_ollama":"http://localhost:11434","num_ctx":49152}'
+  -Body '{"proveedor":"ollama","modelo":"qwen2.5:14b","url_ollama":"http://127.0.0.1:11434","num_ctx":49152}'
 
 # Anthropic API
 Invoke-RestMethod -Method Post -Uri http://localhost:5678/webhook/pims/config -ContentType application/json `
@@ -99,7 +99,7 @@ La `api_key` se guarda en texto plano en `datos/config_modelo.json` y nunca se d
 
 ### Ollama: memoria de la tarjeta gráfica
 
-El prompt de auditoría ocupa unos 20 000 tokens, así que el contexto (`num_ctx`) debe ser de **32 768 o más**. El contexto también ocupa VRAM, además del modelo. Valores aproximados para un modelo de 14B comprimido (Q4):
+El prompt de auditoría ocupa unos 20 000 tokens y la respuesta (informe + JSON) varios miles más, y el contexto (`num_ctx`) debe contener ambos: **32 768 es el mínimo**, y se recomienda **40 960 o 49 152** para que el informe no salga cortado. El contexto también ocupa VRAM, además del modelo. Valores aproximados para un modelo de 14B comprimido (Q4):
 
 | | VRAM aproximada |
 |---|---|
@@ -109,7 +109,8 @@ El prompt de auditoría ocupa unos 20 000 tokens, así que el contexto (`num_ctx
 
 - Si no cabe, Ollama pasa parte del modelo a la RAM y al procesador y todo va mucho más lento. Compruébalo con `ollama ps`: la columna PROCESSOR debe decir `100% GPU`.
 - Para ahorrar: baja `num_ctx` a 32 768 en Configuración y, antes de iniciar Ollama, define las variables de entorno `OLLAMA_FLASH_ATTENTION=1` y `OLLAMA_KV_CACHE_TYPE=q8_0`, que reducen a la mitad, más o menos, la memoria del contexto.
-- Con 8 GB de VRAM o menos, usa un modelo de 7-8B y mide su calidad con `pims-dpa-auditor_pruebas/unsa/ejecutar_casos_unsa.py`.
+- Con 12 GB de VRAM o menos, un 14B no cabe entero con ese contexto: usa un modelo de 7-8B (por ejemplo `qwen2.5:7b`, unos 5 GB más 2-3 GB de contexto) y mide su calidad con `pims-dpa-auditor_pruebas/unsa/ejecutar_casos_unsa.py`.
+- Windows y el navegador ya usan 0,5-1,5 GB de VRAM; compruébalo con `nvidia-smi`.
 
 ### ¿Docker?
 
@@ -137,6 +138,8 @@ Todas las rutas empiezan por `http://localhost:5678/webhook/`.
 | `GET pims/documentos?organizacion=` | | Documentos institucionales de la organización (nombre y tamaño) |
 | `GET pims/app`, `GET pims/app/mammoth` | | La página y el lector de `.docx` que carga bajo demanda |
 | `POST pims/config` | campos del modelo | Cambia el modelo |
+| `POST pims/chat` | `{ambito: expediente u organizacion, id, organizacion, pregunta, usuario?}` | `202 {trabajo}`; la respuesta queda en `pims/trabajo` (`respuesta_chat`) |
+| `GET pims/chat?ambito=&id=` | | Conversación guardada (`datos/chats/`) |
 
 Ejemplo completo en PowerShell:
 
@@ -157,6 +160,7 @@ Con un modelo real, una auditoría tarda **2-5 minutos**. Con Ollama puede tarda
 | **PIMS · Auditar contrato** | Valida la petición y responde 202. Lee la skill, la organización, la jurisdicción, el perfil y el contrato (los PDF con marcadores `[Página N]`). Arma el prompt y llama al modelo. Si el JSON no cumple el esquema, pide **una** corrección. **Calcula de forma determinista** e inserta las cifras en el informe. Guarda el registro. |
 | **PIMS · Perfilar organización** | Lee `documentos/`, los trocea (~18 000 caracteres), extrae notas por parte, redacta el perfil, lo **valida con el mismo validador que Python**, pide una corrección si hace falta y lo guarda en Borrador. Si había un perfil anterior, lo conserva como `.anterior.md`. |
 | **PIMS · Aprobaciones** | Máquina de estados Pendiente DPO → Pendiente Legal → Aprobado o Rechazado, con historial. También permite que el DPO valide el perfil. |
+| **PIMS · Chat** | Preguntas sobre un expediente o una organización. Arma el contexto (registro, contrato, informe, perfil, configuración o la tabla de expedientes), lo recorta si no cabe en el modelo, llama al modelo y guarda la conversación en `datos/chats/`. No modifica expedientes ni perfiles. |
 | **PIMS · Renovaciones** | Cada lunes recalcula las alertas de vencimiento de todos los registros con la fecha del día. |
 | **PIMS · Consultas / Administración** | La API de lectura y escritura que usa la página. Cada webhook solo deja leer sus respuestas a la página y al propio n8n (`allowedOrigins`). |
 | **PIMS · Página web** | Sirve `web/index.html` con sus librerías incrustadas. |
@@ -184,7 +188,7 @@ Pruebas automáticas, todas verificadas en un n8n 2.43.4 real:
 ```
 python n8n\pruebas\equivalencia_py_js.py      # cálculo JS = Python (5 012 casos)
 python n8n\pruebas\equivalencia_perfil.py     # validador de perfiles JS = Python (1 503 casos)
-python n8n\pruebas\probar_flujos.py --raiz <COPIA del proyecto>   # 21 pruebas de extremo a extremo
+python n8n\pruebas\probar_flujos.py --raiz <COPIA del proyecto>   # 30 pruebas de extremo a extremo
 ```
 
 `probar_flujos.py` crea registros y organizaciones de prueba: ejecútalo sobre una **copia** del proyecto, instalada con su propio `instalar_flujos.py`.
@@ -198,7 +202,9 @@ python n8n\pruebas\probar_flujos.py --raiz <COPIA del proyecto>   # 21 pruebas d
 | `Access to the file is not allowed` | n8n no se arrancó con `iniciar_n8n.bat`, o el proyecto se movió (repite la instalación). También ocurre si alguna carpeta de la ruta es un enlace simbólico o una *junction*: n8n 2.x lo bloquea. Copia el proyecto a una ruta normal, por ejemplo `C:\TIF\`. |
 | Trabajo en error: *Claude Code no disponible: Unrecognized node type* | *Execute Command* deshabilitado: arranca con `iniciar_n8n.bat` (incluye `NODES_EXCLUDE=[]`). |
 | Trabajo en error: salida inesperada de claude | El proceso de n8n no encuentra `claude` o la sesión expiró. Abre una terminal, comprueba `claude --version` y arranca n8n desde ella, o pon la ruta completa en `claude_bin`. |
+| Trabajo en error: *Error de red con ollama: connect ECONNREFUSED ::1:11434* | n8n intentó `localhost` por IPv6 y Ollama solo escucha en IPv4. Usa `http://127.0.0.1:11434`. Desde esta versión n8n lo cambia solo. |
 | Trabajo en error: *Error de red con ollama* | Ollama no está corriendo o la URL es incorrecta. |
+| Trabajo en error: *El JSON del modelo no cumple el esquema incluso tras una corrección* | Habitual con modelos pequeños (7-8B): el JSON de 24 controles es largo y estricto. Los errores salen en el trabajo y en `datos\fallidos\<trabajo>.md`, junto con las dos respuestas del modelo. Con Ollama, la corrección usa **salida estructurada**: por defecto `json` (JSON válido, rápido); en Configuración → *Corrección del JSON* se puede elegir el esquema completo, más estricto pero mucho más lento con modelos locales. Si aún falla, prueba un modelo mayor o Claude Code, y anótalo como tasa de fallo del modelo. |
 | *No se pudo extraer texto del archivo (¿PDF escaneado?)* | El PDF es una imagen. Pega el texto o usa un PDF con texto. |
 | El informe sale cortado o con `truncado: true` | El modelo alcanzó su límite de salida: sube `max_tokens` o, en Ollama, `num_ctx`. |
 | La ruta del proyecto tiene `*`, `?`, `{` o `}` | El instalador lo rechaza porque n8n usa esos caracteres como patrones. Mueve el proyecto. |

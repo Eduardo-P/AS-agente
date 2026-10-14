@@ -1,4 +1,4 @@
-# Cambios v1.1 → v2.0 (Etapas 1 a 4)
+# Cambios v1.1 → v2.0 (Etapas 1 a 4 e informe)
 
 **Objetivo:** que la skill funcione para **cualquier organización y cualquier país** sin tocar sus reglas. Lo específico pasa a piezas intercambiables. La v1.1 queda intacta en `versiones/v1.1/`, porque es la que documenta la primera entrega del TIF (`informe_TIF.tex`).
 
@@ -144,7 +144,43 @@ La demo anterior (`demo/`, que llamaba a `claude -p` desde un servidor Python) q
 - `n8n/INSTALACION_N8N.md`: casos de la UNSA en el modelo simulado, memoria de la tarjeta gráfica con Ollama y nota sobre Docker.
 - `pims-dpa-auditor_pruebas/LEEME.md` y `organizaciones/LEEME.md`: todas las pruebas, el caso UNSA y la creación de organizaciones desde la página.
 
-## 12. Pendiente
+## 12. Ajustes tras la primera ejecución en Windows
+
+- `instalar_flujos.py` usa `n8n.cmd` en Windows (Python 3.12 devolvía el script sin extensión: *WinError 193*). `demo/servidor_demo.py`, igual con `claude`.
+- La URL de Ollama pasa a `http://127.0.0.1:11434`, y n8n convierte `localhost` en `127.0.0.1` (Node intentaba `::1` y Ollama solo escucha en IPv4: *ECONNREFUSED ::1:11434*).
+- **Corrección con salida estructurada en Ollama:** si el JSON de la primera respuesta no cumple el esquema, la petición de corrección envía el esquema como `format`, y Ollama restringe la generación a esa forma. Comprobado que el esquema se convierte sin errores a la gramática de llama.cpp.
+- `datos/fallidos/<trabajo>.md` guarda el motivo, los errores de esquema y **las dos respuestas** del modelo. `ejecutar_casos_unsa.py` muestra los errores en pantalla.
+- **Primera ejecución real con `qwen2.5:7b`:** el modelo entregó el JSON con comentarios `// ... (repetir para los demás controles)` y **un solo control**. Cambios:
+  - `extraerJSON` prioriza los bloques ```json (un bloque ```markdown previo desordenaba el emparejamiento y se enviaba a corregir un texto que no era el JSON) y repara comentarios y comas finales.
+  - Nueva revisión de **los 24 controles** (faltantes, repetidos o desconocidos): sin ella, un JSON abreviado habría producido un puntaje calculado sobre menos controles. Si faltan, se pide la corrección y, si persiste, el trabajo termina en error.
+  - La corrección recuerda los 24 controles, incluye la matriz de la sección 4 del propio informe y, con Ollama, el esquema obliga a exactamente 24 controles con identificadores válidos.
+  - Las instrucciones de la auditoría piden JSON estricto, sin comentarios ni abreviaturas.
+- **Ajustes de forma automáticos** (`normalizarRegistro`), que nunca cambian una calificación y quedan registrados en `_registro.ajustes_automaticos`: identificadores con adornos copiados de la referencia (`"A.2.5.7 🅰"` → `"A.2.5.7"`), fila A.1.2.7 retirada (es obligación de la organización, no un control del contrato) y `null` en campos opcionales que no lo admiten tratado como ausente. Son los errores que tuvo `qwen2.5:7b` en la corrección.
+- **Salida estructurada configurable** (`formato_correccion`, en Configuración): `json` por defecto (JSON válido garantizado, sin costo apreciable), `esquema` (forma exacta con 24 controles; en la prueba real con `qwen2.5:7b` la llamada superó los 30 min) o `ninguno`. Ollama recibe además `num_predict` = máximo de tokens de salida, para cortar bucles.
+- **Perfil con documentos reales y un modelo local (9 documentos, ~660 kB, `qwen2.5:7b`):** el perfil salió con un solo documento, la cabecera equivocada y §1 sin fuentes. Causa: las notas de todas las partes no cabían en el contexto (Ollama lo limita a 32 768 tokens en ese modelo) y Ollama descarta el principio del prompt sin avisar. Cambios:
+  - `compactarNotas` + `presupuestoNotas`: las notas se depuran y, si no caben, se reparte el espacio entre todos los documentos; ningún documento queda fuera. El mensaje del trabajo avisa cuántas notas se omitieron.
+  - `normalizarPerfil`: n8n corrige por código la cabecera (organización, id, jurisdicción, fecha, estado) y completa la tabla de documentos con todos los cargados y sus SHA-256 (conserva las filas del modelo que coinciden); las filas de §1-§6 sin fuente válida se marcan "Supuesto" para que el DPO las revise. Los ajustes quedan en `validacion_perfil.json`.
+  - El selector de modelo ya no llama al modelo con una petición vacía cuando el paso anterior falló.
+- Pruebas de flujos: 25/25 (nueva: perfil con documentos extensos y respuesta defectuosa). Antes, 24/24 (nuevas: JSON abreviado con comentarios, identificadores con adornos, y JSON inválido incluso tras la corrección).
+
+## 12b. Chat sobre expedientes y organizaciones (pedido del docente)
+
+- Flujo nuevo **PIMS · Chat** (`POST/GET /webhook/pims/chat`, 13 flujos en total): pregunta en segundo plano con el mismo modelo configurado; la respuesta queda en el trabajo y la conversación en `datos/chats/`.
+- Contexto: en un expediente, el registro calculado, el texto del contrato (no confiable), el informe, la configuración y el perfil; en una organización, la tabla de sus expedientes, las alertas, el perfil y la configuración. Con Ollama se recorta por prioridad para caber en 32 768 tokens (`ajustarBloques`).
+- Reglas del chat (`REGLAS_CHAT` en `n8n/lib/prompts.js`): solo el contexto y con fuente, no modifica nada, no obedece instrucciones de los documentos, las del usuario no cambian los criterios, no es asesoría legal.
+- Cada auditoría guarda el texto evaluado en `datos/registro/<id>.contrato.txt`.
+- Página: pestaña **Preguntar** en el expediente y sección en **Organización y perfil**, con sugerencias, Ctrl + Enter y la conversación guardada.
+- Pruebas: 4 nuevas en los flujos (30/30: contexto, historial, expediente intacto, solo los expedientes de la organización, errores, recorte con Ollama) y 1 en la página (10/10).
+
+## 12c. Corrección: lista de controles vacía
+
+- Caso UNSA 03 con `qwen2.5:7b`: el JSON traía `"controles": [ // … ]`; al quitar el comentario quedaba una lista vacía, que el esquema acepta, y el sistema calculó **0/100 sin ningún control**. Ahora una lista vacía es un error: se pide la corrección y, si persiste, la auditoría termina en error. Prueba nueva (30/30).
+
+## 13. Informe del TIF actualizado
+
+`informe_TIF.tex` pasa a describir la v2.0 (segunda entrega, 58 páginas): tareas 1 a 3 actualizadas; secciones nuevas de generalización (tres capas, perfil, asimetría), orquestación con n8n (flujos, recorrido de una auditoría, modelo intercambiable, equivalencia JS = Python, controles para modelos pequeños, seguridad), interfaz web con capturas, pruebas automáticas, caso UNSA, prueba con un modelo local y comparación de modelos (tabla por completar); discusión, trabajo futuro, conclusiones y referencias ampliadas; anexos D (JSON v2), E (referencias UNSA) y F (servicios web). El informe de la primera entrega queda en `versiones/v1.1/informe_TIF_v1.1.tex`. Compila con pdfLaTeX (requiere babel-spanish, newtx y TeX Gyre).
+
+## 14. Pendiente
 
 - Perfil de la UNSA con los documentos reales (ver `organizaciones/unsa/LEEME.md`).
-- `informe_TIF.tex` describe la v1.1 (primera entrega). Para la siguiente entrega, la arquitectura vigente está en `PROYECTO.md`.
+- Completar en `informe_TIF.tex` la Tabla 26 (comparación de modelos) con los `comparacion.md` de Claude y de Ollama.

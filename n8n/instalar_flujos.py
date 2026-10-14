@@ -13,12 +13,13 @@ Qué hace:
        NODES_EXCLUDE = []                   (habilita Execute Command: Claude Code y crear carpetas)
        GENERIC_TIMEZONE = America/Lima      (fechas de referencia y renovaciones)
        N8N_LISTEN_ADDRESS = 127.0.0.1       (n8n solo accesible desde este equipo)
-  3. Con --importar: ejecuta `n8n import:workflow` y `n8n publish:workflow` para los 12 flujos.
+  3. Con --importar: ejecuta `n8n import:workflow` y `n8n publish:workflow` para los 13 flujos.
 
 Opciones: --sin-execute-command (no habilita Execute Command: sin Claude Code ni creación de carpetas)
           --zona America/Lima   --puerto 5678
 """
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -28,7 +29,7 @@ AQUI = Path(__file__).resolve().parent
 RAIZ = AQUI.parent
 IDS = ["PimsLeerArchivos", "PimsGuardarArchi", "PimsModeloIA0000", "PimsClaudeCode00", "PimsCrearCarpeta",
        "PimsAuditar00000", "PimsPerfilar0000", "PimsAprobaciones", "PimsRenovaciones", "PimsConsultas000",
-       "PimsAdministrar0", "PimsPaginaWeb000"]
+       "PimsAdministrar0", "PimsPaginaWeb000", "PimsChat00000000"]
 
 
 def main():
@@ -88,7 +89,12 @@ def main():
         print("\nSiguiente paso (con n8n detenido):  python n8n/instalar_flujos.py --importar")
         return
 
-    n8n = shutil.which("n8n")
+    # En Windows, npm instala tres lanzadores: n8n (script sh, no ejecutable), n8n.cmd y n8n.ps1.
+    # Algunas versiones de Python (3.12) devuelven el script sh con shutil.which("n8n"): WinError 193.
+    if os.name == "nt":
+        n8n = shutil.which("n8n.cmd") or shutil.which("n8n.exe")
+    else:
+        n8n = shutil.which("n8n")
     if not n8n:
         sys.exit("\nNo se encontró el comando 'n8n'. Instálalo con:  npm install -g n8n   (requiere Node.js 24 o superior)")
     print(f"\nImportando con {n8n} …")
