@@ -49,7 +49,7 @@ Convierte los documentos institucionales de cualquier organización (ROF, MOF, T
 python pims-dpa-auditor_pruebas/ejecutar_pruebas.py
 ```
 
-**27/27 correctas.** Cubren:
+**28/28 correctas.** Cubren:
 
 - **Regresión exacta contra la v1.1** sobre los 5 resultados guardados (22, 100, 0, 22 y 100).
 - **Jurisdicciones:** estados, errores y selección de otro país.
@@ -178,9 +178,17 @@ La demo anterior (`demo/`, que llamaba a `claude -p` desde un servidor Python) q
 
 ## 13. Informe del TIF actualizado
 
-`informe_TIF.tex` pasa a describir la v2.0 (segunda entrega, 58 páginas): tareas 1 a 3 actualizadas; secciones nuevas de generalización (tres capas, perfil, asimetría), orquestación con n8n (flujos, recorrido de una auditoría, modelo intercambiable, equivalencia JS = Python, controles para modelos pequeños, seguridad), interfaz web con capturas, pruebas automáticas, caso UNSA, prueba con un modelo local y comparación de modelos (tabla por completar); discusión, trabajo futuro, conclusiones y referencias ampliadas; anexos D (JSON v2), E (referencias UNSA) y F (servicios web). El informe de la primera entrega queda en `versiones/v1.1/informe_TIF_v1.1.tex`. Compila con pdfLaTeX (requiere babel-spanish, newtx y TeX Gyre).
+`informe_TIF.tex` pasa a describir la v2.0 (segunda entrega, 63 páginas): tareas 1 a 3 actualizadas; secciones nuevas de generalización (tres capas, perfil, asimetría), orquestación con n8n (flujos, recorrido de una auditoría, modelo intercambiable, equivalencia JS = Python, controles para modelos pequeños, seguridad), interfaz web con capturas, pruebas automáticas, caso UNSA, prueba con un modelo local y comparación de modelos (tabla por completar); discusión, trabajo futuro, conclusiones y referencias ampliadas; anexos D (JSON v2), E (referencias UNSA) y F (servicios web). El informe de la primera entrega queda en `versiones/v1.1/informe_TIF_v1.1.tex`. Compila con pdfLaTeX (requiere babel-spanish, newtx y TeX Gyre).
+
+## 13b. Desglose por sección del Anexo A, radar y verificación contra la norma
+
+- **Desglose del puntaje:** las 4 dimensiones propias (Contractual, Ciclo de vida del dato, Transferencias y sub-encargados, Seguridad e incidentes) se reemplazan por las **5 secciones del Anexo A** de ISO/IEC 27701:2025: A.2.2 Condiciones de recolección y tratamiento (6 controles), A.2.3 Obligaciones con los titulares (1), A.2.4 Privacidad desde el diseño y por defecto (3), A.2.5 Compartición, transferencia y comunicación (8) y A.3 Consideraciones de seguridad (6). Cambian `calcular.js` y `calcular_resultado.py` (orden fijo, equivalencia JS = Python en 5 012 casos), `criterios_semaforo.md` §8.6, `SKILL.md` y el esquema. **El puntaje total, el dictamen y las alertas no cambian.**
+- **Diagrama de radar:** la sección 7 de cada informe incluye la tabla por sección (con el número de controles evaluados) y un radar SVG dibujado por el código (escala 0-100, referencia en 80). La vista del expediente de la página muestra las barras y el radar. Los expedientes antiguos, con 4 dimensiones, se siguen viendo.
+- **Verificación contra el texto oficial:** identificadores, títulos y secciones de los 24 controles coinciden con la norma. `controles_iso27701_2025.md` (v2.1) incorpora, parafraseada, la guía del Anexo B para los controles donde más ayuda (unos 900 tokens más por auditoría). La correspondencia con la edición 2019 sigue pendiente. El texto de la norma no se incluye en el repositorio.
+- Resultados de referencia (`resultados/*.json`, `unsa/esperado/*.json`) regenerados: solo cambia `por_dimension`. Pruebas: 28/28 (prueba nueva del desglose), flujos 30/30 (verifican el radar), página 10/10.
+- **Reimportar los flujos** en n8n: `calcular.js` y `prompts.js` van incrustados en ellos.
 
 ## 14. Pendiente
 
 - Perfil de la UNSA con los documentos reales (ver `organizaciones/unsa/LEEME.md`).
-- Completar en `informe_TIF.tex` la Tabla 26 (comparación de modelos) con los `comparacion.md` de Claude y de Ollama.
+- Completar en `informe_TIF.tex` la Tabla 28 (comparación de modelos, etiqueta `tab:comparacion-modelos`) con los `comparacion.md` de Claude y de Ollama.

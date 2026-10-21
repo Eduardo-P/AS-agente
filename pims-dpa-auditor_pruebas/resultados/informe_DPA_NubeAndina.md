@@ -94,12 +94,13 @@ Si el proveedor usa los datos para fines propios, actúa fuera del encargo y asu
 
 ## 7. Puntaje del proveedor
 
-| Dimensión | Puntaje base |
+| Sección del Anexo A | Puntaje base |
 |---|---|
-| Contractual | 31,8 |
-| Ciclo de vida del dato | 45,0 |
-| Transferencias y sub-encargados | 42,2 |
-| Seguridad e incidentes | 32,5 |
+| A.2.2 Condiciones de recolección y tratamiento | 30,0 |
+| A.2.3 Obligaciones con los titulares | 50,0 |
+| A.2.4 Privacidad desde el diseño y por defecto | 45,0 |
+| A.2.5 Compartición, transferencia y comunicación | 42,2 |
+| A.3 Consideraciones de seguridad | 32,5 |
 | **Total** | **37,5 − 15 = 22 → Riesgo alto** |
 
 ## 8. Plan de remediación

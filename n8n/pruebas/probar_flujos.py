@@ -167,6 +167,9 @@ def main():
             assert r["_registro"]["proveedor"] == prov and r["trazabilidad"]["calculo"] == "script"
             assert r["contrato"]["hash_documento_sha256"] == hashlib.sha256(contrato["NubeAndina"].encode()).hexdigest()
             assert "Valores calculados por n8n" in d["informe"] and "Trazabilidad registrada por n8n" in d["informe"]
+            assert list(r["puntaje_proveedor"]["por_dimension"])[0] == "Condiciones de recolección y tratamiento"
+            assert len(r["puntaje_proveedor"]["por_dimension"]) == 5, "el desglose debe tener las 5 secciones del Anexo A"
+            assert "<svg" in d["informe"] and "A.2.3 · 50" in d["informe"], "falta el radar en la sección 7 del informe"
             reg[prov] = t["id_registro"]
             return f"{t['puntaje']}/100 · {t['dictamen']}"
 

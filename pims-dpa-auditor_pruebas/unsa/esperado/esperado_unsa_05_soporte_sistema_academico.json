@@ -544,10 +544,11 @@
     "base": 36.3,
     "penalizacion": 5,
     "por_dimension": {
-      "Contractual": 25.0,
-      "Ciclo de vida del dato": 40.0,
-      "Transferencias y sub-encargados": 53.1,
-      "Seguridad e incidentes": 20.0
+      "Condiciones de recolección y tratamiento": 25.0,
+      "Obligaciones con los titulares": 25.0,
+      "Privacidad desde el diseño y por defecto": 40.0,
+      "Compartición, transferencia y comunicación": 53.1,
+      "Consideraciones de seguridad": 20.0
     }
   },
   "dictamen": "No recomendable sin enmiendas",

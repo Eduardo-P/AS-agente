@@ -8,13 +8,13 @@ Contratos ficticios, resultados de referencia y pruebas automáticas. Los contra
 python pims-dpa-auditor_pruebas/ejecutar_pruebas.py
 ```
 
-27 pruebas sobre la parte determinista: regresión exacta contra la v1.1, jurisdicciones, coherencia de política, perfil, validador de perfiles y compatibilidad. Deben salir **27/27 correctas**.
+28 pruebas sobre la parte determinista: regresión exacta contra la v1.1 (el desglose por sección del Anexo A se verifica aparte), jurisdicciones, coherencia de política, perfil, validador de perfiles y compatibilidad. Deben salir **27/27 correctas**.
 
 ## Todas las pruebas del proyecto
 
 | Prueba | Necesita | Resultado esperado |
 |---|---|---|
-| `python pims-dpa-auditor_pruebas/ejecutar_pruebas.py` | Solo Python | 27/27 |
+| `python pims-dpa-auditor_pruebas/ejecutar_pruebas.py` | Solo Python | 28/28 |
 | `python n8n/pruebas/equivalencia_py_js.py` y `equivalencia_perfil.py` | Python y Node | IDÉNTICOS |
 | `python n8n/pruebas/probar_flujos.py --raiz <copia>` | n8n y el modelo simulado | 30/30 |
 | `python web/pruebas/probar_pagina.py --raiz <copia>` | n8n y Playwright | 10/10 |

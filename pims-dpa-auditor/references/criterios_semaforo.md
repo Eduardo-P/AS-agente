@@ -91,8 +91,11 @@ Mayor puntaje = mejor postura contractual.
 3. **Puntaje base** = Σ(peso × factor) / Σ(peso) × 100.
 4. **Penalización:** −5 por cada alerta Alta, hasta −20. Mínimo 0. Redondeo al entero.
 5. **Banda:** 80–100 Riesgo bajo · 50–79 Riesgo medio · 0–49 Riesgo alto.
-6. **Desglose por dimensión** (puntaje base sin penalización):
-   - Contractual: A.2.2.x y A.2.3.2
-   - Ciclo de vida del dato: A.2.4.x
-   - Transferencias y sub-encargados: A.2.5.x
-   - Seguridad e incidentes: A.3.x
+6. **Desglose por sección** (puntaje base sin penalización). Las dimensiones son las secciones del Anexo A de ISO/IEC 27701:2025, en el orden de la norma y con su título parafraseado:
+   - A.2.2 Condiciones de recolección y tratamiento: A.2.2.2 a A.2.2.7 (6 controles)
+   - A.2.3 Obligaciones con los titulares: A.2.3.2 (1 control)
+   - A.2.4 Privacidad desde el diseño y por defecto: A.2.4.2 a A.2.4.4 (3 controles)
+   - A.2.5 Compartición, transferencia y comunicación: A.2.5.2 a A.2.5.9 (8 controles)
+   - A.3 Consideraciones de seguridad: A.3.9 a A.3.13 y A.3.15 (6 controles)
+
+   El informe muestra este desglose como tabla y como diagrama de radar (eje 0-100, línea de referencia en 80). Una sección con todos sus controles en "No aplica" queda sin valor (—). A.2.3 tiene un solo control: su valor solo puede ser 0, 25, 50 o 100.

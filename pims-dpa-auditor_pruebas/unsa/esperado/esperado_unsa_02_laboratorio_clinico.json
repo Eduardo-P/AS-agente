@@ -507,10 +507,11 @@
     "base": 50.6,
     "penalizacion": 5,
     "por_dimension": {
-      "Contractual": 79.5,
-      "Ciclo de vida del dato": 55.0,
-      "Transferencias y sub-encargados": 39.1,
-      "Seguridad e incidentes": 35.0
+      "Condiciones de recolección y tratamiento": 77.5,
+      "Obligaciones con los titulares": 100.0,
+      "Privacidad desde el diseño y por defecto": 55.0,
+      "Compartición, transferencia y comunicación": 39.1,
+      "Consideraciones de seguridad": 35.0
     }
   },
   "dictamen": "No recomendable sin enmiendas",

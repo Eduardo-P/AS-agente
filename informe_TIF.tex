@@ -804,7 +804,28 @@ P_{\text{base}} = \frac{\sum_{i} w_i \, f_i}{\sum_{i} w_i} \times 100
 P = \max\bigl(0,\; \operatorname{redondeo}(P_{\text{base}} - \min(5\,n_A,\, 20))\bigr)
 \end{equation}
 
-\noindent donde $f_i$ es el factor del estado del control $i$ (Cumple 1,0; Parcial 0,5; Sin evidencia 0,25; No cumple 0; No aplica se excluye), $w_i$ es su peso (3 para controles críticos, 1 para los demás) y $n_A$ es el número de alertas de prioridad Alta. El redondeo es el de Python (al par más cercano en los empates, como 22,5), que la versión en JavaScript reproduce. El puntaje se clasifica en tres bandas: 80 a 100, riesgo bajo; 50 a 79, riesgo medio; 0 a 49, riesgo alto. Se calcula además un desglose en cuatro dimensiones: contractual, ciclo de vida del dato, transferencias y sub-encargados, y seguridad e incidentes.
+\noindent donde $f_i$ es el factor del estado del control $i$ (Cumple 1,0; Parcial 0,5; Sin evidencia 0,25; No cumple 0; No aplica se excluye), $w_i$ es su peso (3 para controles críticos, 1 para los demás) y $n_A$ es el número de alertas de prioridad Alta. El redondeo es el de Python (al par más cercano en los empates, como 22,5), que la versión en JavaScript reproduce. El puntaje se clasifica en tres bandas: 80 a 100, riesgo bajo; 50 a 79, riesgo medio; 0 a 49, riesgo alto. Se calcula además el puntaje base de cada una de las cinco secciones del Anexo A de la norma, que agrupan los 24 controles evaluados (Tabla~\ref{tab:secciones}). Las secciones son las de la propia norma y se usan con su título; el proyecto no define agrupaciones propias.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Secciones del Anexo A usadas para el desglose del puntaje}
+\label{tab:secciones}
+\begin{tabularx}{\linewidth}{@{}l Y c@{}}
+\toprule
+\textbf{Sección} & \textbf{Título (paráfrasis)} & \textbf{Controles} \\
+\midrule
+A.2.2 & Condiciones de recolección y tratamiento & 6 \\
+A.2.3 & Obligaciones con los titulares & 1 \\
+A.2.4 & Privacidad desde el diseño y por defecto & 3 \\
+A.2.5 & Compartición, transferencia y comunicación de datos & 8 \\
+A.3 & Consideraciones de seguridad (controles compartidos) & 6 \\
+\bottomrule
+\end{tabularx}
+\notaapa{A.2.2 a A.2.5 son los encabezados de la Tabla A.2 (encargados). De la Tabla A.3, que tiene un solo encabezado y 29 controles, se usan los seis que se reflejan en un contrato: A.3.9 a A.3.13 y A.3.15. A.2.3 tiene un solo control, por lo que su valor solo puede ser 0, 25, 50 o 100.}
+\end{table}
+
+Cada informe muestra este desglose como tabla y como diagrama de radar, con escala fija de 0 a 100 y una línea de referencia en 80, el umbral de riesgo bajo. El radar lo dibuja el código a partir de los mismos valores, por lo que no introduce ninguna cifra nueva. En la versión 2.0 inicial el desglose usaba cuatro dimensiones definidas por el grupo (contractual, ciclo de vida del dato, transferencias y sub-encargados, y seguridad e incidentes); se reemplazaron por las secciones de la norma para que cada eje sea trazable a ella. El cambio no afecta el puntaje total ni el dictamen, que no dependen del desglose.
 
 \subsubsection{Dictamen}
 
@@ -872,7 +893,7 @@ El JSON sigue un esquema que define tipos, valores permitidos y campos obligator
 \texttt{certificaciones}, \texttt{uso\_ia} & Resultado del paso de idoneidad. \\
 \texttt{controles} & Control, ámbito, cláusula, evidencia, estado, severidad y fuente del requisito. \\
 \texttt{alertas} & Prioridad, tipo, descripción, controles relacionados y origen (modelo o script). \\
-\texttt{puntaje\_proveedor} & Valor, banda, puntaje base, penalización y desglose por dimensión. \\
+\texttt{puntaje\_proveedor} & Valor, banda, puntaje base, penalización y desglose por sección del Anexo A. \\
 \texttt{dictamen}, \texttt{aprobacion} & Dictamen y estado de la doble puerta (Pendiente DPO, Pendiente Legal, Aprobado, Rechazado). \\
 \texttt{trazabilidad} & Versiones de la skill, la configuración, la jurisdicción y el perfil; parámetros aplicados; evaluador; fecha; método de cálculo y advertencias. \\
 \bottomrule
@@ -995,7 +1016,7 @@ El plan inicial proponía indexar el texto completo de las normas ISO en una bas
 \end{tabularx}
 \end{table}
 
-\par\noindent \textbf{Uso de fuentes.} Los resúmenes de controles son paráfrasis elaboradas por el grupo con fines académicos; no reproducen la norma. Los identificadores se obtuvieron de fuentes secundarias y deben verificarse contra el texto oficial licenciado (Anexos A y F de la norma) antes de un uso formal. Esta limitación figura en cada informe que genera la skill.
+\par\noindent \textbf{Uso de fuentes.} Los resúmenes de controles son paráfrasis elaboradas por el grupo con fines académicos; no reproducen la norma. Los identificadores se obtuvieron inicialmente de fuentes secundarias; en la segunda entrega se verificaron contra el texto oficial de ISO/IEC 27701:2025, y coinciden los 24 controles con sus títulos y su ubicación en las Tablas A.2 y A.3. La lista de verificación se afinó con la guía de implementación del Anexo B, siempre parafraseada. Sigue pendiente verificar la correspondencia con la edición 2019 (Anexo F), que se usa solo como ayuda para leer contratos antiguos. El texto de la norma no se incluye en el repositorio por estar sujeto a licencia.
 \par
 
 \subsection{Ubicación en la arquitectura multiagente}
@@ -1324,7 +1345,7 @@ La página se sirve desde el propio n8n, por lo que no requiere otro servidor. L
 \midrule
 Auditar un contrato & Pegar el texto o soltar un archivo; muestra el avance y avisa cuando el expediente está listo, aunque el usuario cambie de pantalla. \\
 Expedientes & Todas las auditorías de la organización, con su puntaje y estado de aprobación. \\
-Expediente & La \emph{huella} de 24 casillas (una por control, coloreada según su estado), el puntaje, el dictamen, las dimensiones y los dos sellos de aprobación; pestañas de informe, alertas, historial y JSON. \\
+Expediente & La \emph{huella} de 24 casillas (una por control, coloreada según su estado), el puntaje, el dictamen, el desglose por sección del Anexo A (barras y radar) y los dos sellos de aprobación; pestañas de informe, alertas, historial y JSON. \\
 Por aprobar & Bandeja del rol elegido (DPO o Legal). \\
 Organización y perfil & Documentos institucionales, generación y validación del perfil, terceros sin DPA evaluado y creación de organizaciones. \\
 Renovaciones & Contratos que vencen o cuyo plazo de preaviso llega pronto. \\
@@ -1406,7 +1427,7 @@ Para probar los flujos sin gastar cuota ni depender de un modelo, se construyó 
 \toprule
 \textbf{Prueba} & \textbf{Qué comprueba} & \textbf{Resultado} \\
 \midrule
-Pruebas de la skill & Regresión exacta contra la versión 1.1, jurisdicciones, coherencia de la política con la ley, perfil, validador de perfiles, compatibilidad y entradas inválidas. Solo requiere Python. & 27/27 \\
+Pruebas de la skill & Regresión exacta contra la versión 1.1 (salvo el desglose, verificado aparte), jurisdicciones, coherencia de la política con la ley, perfil, validador de perfiles, compatibilidad y entradas inválidas. Solo requiere Python. & 28/28 \\
 Equivalencia del cálculo & JavaScript frente a Python en referencias, variantes y casos aleatorios. & 5\,012 idénticos \\
 Equivalencia del validador de perfiles & JavaScript frente a Python. & 1\,503 idénticos \\
 Flujos de n8n & Auditoría con los cuatro proveedores de modelo, PDF de dos páginas, inyección, corrección del JSON, JSON abreviado, identificadores alterados, errores, aprobaciones, perfil, organizaciones, renovaciones y jurisdicciones, chat (contexto, historial, expediente intacto, aislamiento entre organizaciones, recorte del contexto), en un n8n 2.43.4 real. & 30/30 \\
@@ -1437,7 +1458,7 @@ DigiServ (addendum) & Cinco cláusulas vagas y una nota dirigida al ``sistema ev
 \end{tabularx}
 \end{table}
 
-La Tabla~\ref{tab:resultados} consolida los resultados, y la Figura~\ref{fig:dimensiones} desglosa el puntaje base por dimensión. La versión 2.0 reproduce exactamente estos resultados.
+La Tabla~\ref{tab:resultados} consolida los resultados, y la Figura~\ref{fig:dimensiones} desglosa el puntaje base por sección del Anexo A. La versión 2.0 reproduce exactamente el puntaje total, el dictamen y las alertas de la versión 1.1.
 
 \begin{table}[H]
 \centering
@@ -1459,36 +1480,39 @@ DigiServ   & Medio & 0  & 1  & 9 & 14 & 4 & 0   & No recomendable \\
 
 \begin{figure}[H]
 \centering
-\caption{Puntaje base por dimensión en los tres casos de prueba}
+\caption{Radar del puntaje base por sección del Anexo A en los tres casos de prueba}
 \label{fig:dimensiones}
-\begin{tikzpicture}[x=1cm, y=0.042cm]
-  \draw[lineaSuave] (0,0) -- (13.2,0);
-  \foreach \v in {0,25,50,75,100} {
-    \draw[lineaSuave, dashed, line width=0.3pt] (0,\v) -- (13.2,\v);
-    \node[font=\scriptsize, anchor=east] at (0,\v) {\v};
+\begin{tikzpicture}[scale=1]
+  \def\R{3.0}
+  % anillos de 20 en 20
+  \foreach \v in {20,40,60,100} {
+    \draw[gray!35, line width=0.4pt] (90:\R*\v/100) \foreach \a in {18,-54,-126,162} { -- (\a:\R*\v/100) } -- cycle;
   }
-  \fill[gray, opacity=0.06] (0,80) rectangle (13.2,100);
-  \fill[gray, opacity=0.03] (0,0) rectangle (13.2,50);
-  \foreach \i/\lab in {0/Contractual, 1/Ciclo de vida, 2/Transferencias, 3/Seguridad} {
-    \node[font=\scriptsize, anchor=north, align=center, text width=3cm] at ({\i*3.3+1.65},-3) {\lab};
-  }
-  \foreach \i/\v in {0/31.8, 1/45.0, 2/42.2, 3/32.5} {
-    \fill[gray!55] ({\i*3.3+0.45},0) rectangle ({\i*3.3+1.15},\v);
-    \node[font=\tiny, anchor=south] at ({\i*3.3+0.8},\v) {\v};
-  }
-  \foreach \i/\v in {0/100, 1/100, 2/100, 3/100} {
-    \fill[gray!85] ({\i*3.3+1.3},0) rectangle ({\i*3.3+2.0},\v);
-    \node[font=\tiny, anchor=south] at ({\i*3.3+1.65},\v) {\v};
-  }
-  \foreach \i/\v in {0/11.4, 1/15.0, 2/6.2, 3/10.0} {
-    \fill[gray!25] ({\i*3.3+2.15},0) rectangle ({\i*3.3+2.85},\v);
-    \node[font=\tiny, anchor=south] at ({\i*3.3+2.5},\v) {\v};
-  }
-  \fill[gray!55] (3.0,118) rectangle (3.4,124); \node[font=\scriptsize, anchor=west] at (3.45,121) {NubeAndina};
-  \fill[gray!85] (5.6,118) rectangle (6.0,124); \node[font=\scriptsize, anchor=west] at (6.05,121) {AndesCloud};
-  \fill[gray!25] (8.2,118) rectangle (8.6,124); \node[font=\scriptsize, anchor=west] at (8.65,121) {DigiServ};
+  \draw[black!70, dashed, line width=0.7pt] (90:\R*0.8) \foreach \a in {18,-54,-126,162} { -- (\a:\R*0.8) } -- cycle;
+  \foreach \a in {90,18,-54,-126,162} { \draw[gray!35, line width=0.4pt] (0,0) -- (\a:\R); }
+  \foreach \v in {20,40,60,80,100} { \node[font=\tiny, anchor=west, gray] at (0.05,\R*\v/100) {\v}; }
+  % AndesCloud (100 en todas)
+  \draw[black!80, line width=1pt, fill=black!10, fill opacity=0.5] (90:\R) -- (18:\R) -- (-54:\R) -- (-126:\R) -- (162:\R) -- cycle;
+  % NubeAndina: 30, 50, 45, 42.2, 32.5
+  \draw[black!60, line width=1pt, dash pattern=on 4pt off 2pt, fill=black!25, fill opacity=0.5]
+    (90:\R*0.300) -- (18:\R*0.500) -- (-54:\R*0.450) -- (-126:\R*0.422) -- (162:\R*0.325) -- cycle;
+  % DigiServ: 10, 25, 15, 6.2, 10
+  \draw[black, line width=1pt, dotted, fill=black!45, fill opacity=0.6]
+    (90:\R*0.100) -- (18:\R*0.250) -- (-54:\R*0.150) -- (-126:\R*0.062) -- (162:\R*0.100) -- cycle;
+  % etiquetas de los ejes
+  \node[font=\scriptsize, align=center, anchor=south] at (90:\R+0.15) {\textbf{A.2.2} (6)\\Condiciones de recolección\\y tratamiento};
+  \node[font=\scriptsize, align=left, anchor=west] at (18:\R+0.2) {\textbf{A.2.3} (1)\\Obligaciones con\\los titulares};
+  \node[font=\scriptsize, align=left, anchor=north west] at (-54:\R+0.15) {\textbf{A.2.4} (3)\\Privacidad desde el\\diseño y por defecto};
+  \node[font=\scriptsize, align=right, anchor=north east] at (-126:\R+0.15) {\textbf{A.2.5} (8)\\Compartición, transferencia\\y comunicación};
+  \node[font=\scriptsize, align=right, anchor=east] at (162:\R+0.2) {\textbf{A.3} (6)\\Consideraciones\\de seguridad};
+  % leyenda
+  \begin{scope}[shift={(-3.6,-4.6)}]
+    \draw[black!80, line width=1pt, fill=black!10] (0,0) rectangle (0.5,0.25); \node[font=\scriptsize, anchor=west] at (0.6,0.125) {AndesCloud};
+    \draw[black!60, line width=1pt, dash pattern=on 4pt off 2pt, fill=black!25] (2.5,0) rectangle (3.0,0.25); \node[font=\scriptsize, anchor=west] at (3.1,0.125) {NubeAndina};
+    \draw[black, line width=1pt, dotted, fill=black!45] (5.0,0) rectangle (5.5,0.25); \node[font=\scriptsize, anchor=west] at (5.6,0.125) {DigiServ};
+  \end{scope}
 \end{tikzpicture}
-\notaapa{Puntajes base sin la penalización por alertas de prioridad Alta. En cada grupo, de izquierda a derecha: NubeAndina (gris medio), AndesCloud (gris oscuro) y DigiServ (gris claro). La banda superior marca el rango de riesgo bajo (80 a 100) y la inferior el de riesgo alto (0 a 49).}
+\notaapa{Puntajes base (0 a 100) sin la penalización por alertas de prioridad Alta; entre paréntesis, el número de controles de cada sección. La línea discontinua negra marca 80, el umbral de riesgo bajo. Valores de NubeAndina: 30,0; 50,0; 45,0; 42,2 y 32,5. DigiServ: 10,0; 25,0; 15,0; 6,2 y 10,0. AndesCloud: 100 en las cinco secciones.}
 \end{figure}
 
 \par\noindent \textbf{NubeAndina.} Puntaje 22 sobre 100 (riesgo alto), con un puntaje base de 37,5 y una penalización de 15 puntos por tres alertas Altas. El cálculo puede verificarse a mano: los nueve controles críticos aportan un peso de 27 (uno cumple, 3,0 puntos; cinco parciales, 7,5; tres no cumplen, 0), y los quince restantes un peso de 15 (siete parciales, 3,5 puntos; siete sin evidencia, 1,75; uno que no cumple). El total es $15{,}75 / 42 \times 100 = 37{,}5$. Las tres alertas Altas son el uso de las grabaciones para mejorar los modelos de analítica de voz del proveedor, el aviso de incidentes en 72 horas y los sub-encargados en Estados Unidos e India sin garantías. La matriz completa figura en el \hyperref[anx:matriz]{Anexo B}.
@@ -1643,7 +1667,7 @@ El tercero es la independencia del modelo. El mismo sistema funciona con un serv
 \subsection{Limitaciones}
 
 \begin{itemize}
-  \item \textbf{Verificación normativa.} La numeración de controles proviene de fuentes secundarias; el grupo no tuvo acceso al texto oficial licenciado de ISO/IEC 27701:2025.
+  \item \textbf{Verificación normativa parcial.} Los identificadores y títulos de los controles se verificaron contra el texto oficial de ISO/IEC 27701:2025, pero la correspondencia con la edición 2019 sigue sin verificar y los resúmenes de los controles son paráfrasis del grupo, no revisadas por un especialista.
   \item \textbf{Evaluación documental.} El sistema evalúa lo que el contrato obliga, no lo que el proveedor implementa en la práctica.
   \item \textbf{Casos de prueba propios.} Todos los contratos, incluidos los de la UNSA, son ficticios, lo que puede favorecer resultados limpios. Las evaluaciones de referencia no han sido revisadas por un especialista.
   \item \textbf{Parámetros no validados.} Los plazos internos, la lista de países y los cargos de los aprobadores de la UNSA son supuestos, no definiciones de un DPO real.
@@ -1684,7 +1708,7 @@ Revisión de las referencias & Revisar las evaluaciones de referencia de la UNSA
 Integración multiagente & Conectar el Agente 7 con los demás agentes mediante MCP: envío de controles compartidos al Agente 3, consulta del inventario (Agente 1) y de la evaluación de impacto (Agente 2), y registro en PostgreSQL. \\
 Seguridad operativa & Autenticación de usuarios y asignación de roles DPO y Legal a personas concretas. \\
 Otras jurisdicciones & Completar y revisar con un especialista la carpeta de otro país a partir de la plantilla. \\
-Verificación normativa & Contrastar la numeración de controles con el texto oficial licenciado de la norma. \\
+Verificación normativa & Verificar la correspondencia con la edición 2019 (Anexo F) y hacer revisar por un especialista las paráfrasis de la lista de verificación. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -1931,8 +1955,11 @@ El Código~\ref{lst:json} muestra los bloques principales del resultado esperado
   "puntaje_proveedor": {
     "valor": 0, "banda": "Riesgo alto", "base": 10.1, "penalizacion": 20,
     "por_dimension": {
-      "Contractual": 11.4, "Ciclo de vida del dato": 10.0,
-      "Transferencias y sub-encargados": 6.2, "Seguridad e incidentes": 15.0
+      "Condiciones de recolección y tratamiento": 10.0,
+      "Obligaciones con los titulares": 25.0,
+      "Privacidad desde el diseño y por defecto": 10.0,
+      "Compartición, transferencia y comunicación": 6.2,
+      "Consideraciones de seguridad": 15.0
     }
   },
   "dictamen": "No recomendable sin enmiendas",

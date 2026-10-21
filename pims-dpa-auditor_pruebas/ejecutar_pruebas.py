@@ -6,7 +6,8 @@ Ejecutar desde la raíz del proyecto o desde cualquier carpeta:
     python pims-dpa-auditor_pruebas/ejecutar_pruebas.py
 
 Qué verifica (sin modelo de IA; todo es reproducible):
-  A. Regresión: la v2.0 da exactamente los mismos campos calculados que la v1.1
+  A. Regresión: la v2.0 da exactamente los mismos campos calculados que la v1.1, salvo el
+     desglose por dimensión (ahora las 5 secciones del Anexo A), que se verifica aparte
      (22 / 100 / 0 con fecha 2026-10-01 y las ejecuciones del 2026-10-07).
   B. Jurisdicción intercambiable: carga, estados (Plantilla / Borrador), errores.
   C. Coherencia de la política interna con la ley.
@@ -60,10 +61,15 @@ def correr(script, entrada, *args, env_extra=None):
     return p.returncode, p.stdout + p.stderr, datos
 
 
-def nucleo(r):
-    """Campos que calcula el script: deben ser idénticos entre v1.1 y v2.0."""
+def nucleo(r, con_dimensiones=False):
+    """Campos que calcula el script: deben ser idénticos entre v1.1 y v2.0.
+    El desglose por dimensión cambió en v2.0 (5 secciones del Anexo A en lugar de 4 dimensiones
+    propias), así que se compara aparte; total, dictamen y todo lo demás deben seguir iguales."""
+    puntaje = dict(r.get("puntaje_proveedor") or {})
+    if not con_dimensiones:
+        puntaje.pop("por_dimension", None)
     return {
-        "resumen": r.get("resumen"), "puntaje": r.get("puntaje_proveedor"), "dictamen": r.get("dictamen"),
+        "resumen": r.get("resumen"), "puntaje": puntaje, "dictamen": r.get("dictamen"),
         "controles": [(c["control"], c["estado"], c["severidad"], c["ambito"]) for c in r["controles"]],
         "alertas": r.get("alertas"), "aprobacion": r.get("aprobacion"),
         "estado_dpa": r["contrato"].get("estado_dpa"),
@@ -99,11 +105,34 @@ for archivo, fecha, puntaje, dictamen in REFERENCIAS:
         assert nucleo(r1) == nucleo(r3), "v2.0 (--org inversiones_altiplano) difiere de v1.1"
         if archivo.parent.name == "resultados":
             ref = json.loads(archivo.read_text(encoding="utf-8"))
-            assert nucleo(ref) == nucleo(r2), "v2.0 difiere del resultado de referencia guardado"
+            assert nucleo(ref, True) == nucleo(r2, True), "v2.0 difiere del resultado de referencia guardado"
         assert r2["puntaje_proveedor"]["valor"] == puntaje, f"puntaje {r2['puntaje_proveedor']['valor']} != {puntaje}"
         assert r2["dictamen"] == dictamen, f"dictamen {r2['dictamen']!r}"
         assert r2["jurisdiccion"]["id"] == "peru" and r2["trazabilidad"]["calculo"] == "script"
         return f"{puntaje}/100 · {dictamen}"
+
+SECCIONES = [("A.2.2", "Condiciones de recolección y tratamiento"), ("A.2.3", "Obligaciones con los titulares"),
+             ("A.2.4", "Privacidad desde el diseño y por defecto"),
+             ("A.2.5", "Compartición, transferencia y comunicación"), ("A.3", "Consideraciones de seguridad")]
+
+
+@prueba("A. Desglose: las 5 secciones del Anexo A, en orden, recalculadas a mano")
+def _():
+    archivo, fecha = REFERENCIAS[0][0], REFERENCIAS[0][1]
+    c, s, r = correr(SCRIPT_V2, archivo, "--fecha-ref", fecha)
+    assert c == 0, s
+    dims = r["puntaje_proveedor"]["por_dimension"]
+    assert list(dims) == [n for _, n in SECCIONES], f"claves {list(dims)}"
+    factor = {"Cumple": 1.0, "Parcial": 0.5, "Sin evidencia": 0.25, "No cumple": 0.0}
+    criticos = {"A.2.2.2", "A.2.2.3", "A.2.4.3", "A.2.5.3", "A.2.5.7", "A.2.5.8", "A.2.5.9", "A.3.10", "A.3.12"}
+    for sec, nombre in SECCIONES:
+        cs = [x for x in r["controles"] if x["control"].startswith(sec + ".") and x["estado"] != "No aplica"]
+        den = sum(3 if x["control"] in criticos else 1 for x in cs)
+        num = sum((3 if x["control"] in criticos else 1) * factor[x["estado"]] for x in cs)
+        esperado = round(num / den * 100, 1) if den else None
+        assert dims[nombre] == esperado, f"{nombre}: {dims[nombre]} != {esperado}"
+    return " · ".join(f"{s} {dims[n]}" for s, n in SECCIONES)
+
 
 NUBE = REFERENCIAS[0][0]
 ANDES = REFERENCIAS[1][0]

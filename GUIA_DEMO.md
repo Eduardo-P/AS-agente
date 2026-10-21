@@ -44,7 +44,7 @@ Ningún expediente se aprueba solo. El sistema recomienda; deciden personas.
 1. En **Organización y perfil**, elige la UNSA (ya viene creada, con cargos provisionales) o crea otra organización con su jurisdicción y los cargos de su DPO y su área legal.
 2. Sube sus documentos (ROF, MOF, TUPA…) y pulsa **Generar perfil**. El modelo los resume en un formato fijo, citando documento y página.
 3. Valida el perfil como DPO.
-4. Muestra **Terceros sin DPA evaluado**: los proveedores que aparecen en los documentos de la institución y todavía no tienen contrato auditado. Pulsa **Auditar** en uno.
+4. Muestra **Terceros sin DPA evaluado**: los proveedores que aparecen en los documentos de la institución y todavía no tienen contrato auditado. Es una lista de pendientes: para auditar uno, ve a **Auditar un contrato** con su contrato.
 5. Explica la regla de asimetría: el perfil puede volver más exigente una auditoría, nunca más permisiva.
 
 > **Si aún no tienes los documentos de la UNSA:** salta los pasos 2 a 4 y audita con la organización *UNSA* los contratos supuestos de `organizaciones/unsa/contratos/`. Los que más lucen: `unsa_04_videovigilancia.md` (reconocimiento facial y contrato vencido: **0/100**) frente a `unsa_03_pasarela_pagos.md` (**99/100**, recomendable con condiciones), y `unsa_05_soporte_sistema_academico.md`, que muestra que un contrato público que solo dice "cumplirá la Ley 29733" no basta. Los resultados esperados están en `pims-dpa-auditor_pruebas/unsa/LEEME.md`.
@@ -66,6 +66,6 @@ Ningún expediente se aprueba solo. El sistema recomienda; deciden personas.
 ## Limitaciones que conviene decir
 
 - Es una evaluación **documental**: no verifica la implementación técnica real del proveedor.
-- La numeración de controles proviene de fuentes secundarias y debe verificarse contra el texto oficial licenciado de ISO/IEC 27701:2025.
+- Los identificadores y títulos de los controles están verificados contra el texto oficial de ISO/IEC 27701:2025; la correspondencia con la edición 2019 sigue pendiente.
 - No es asesoría legal y no reemplaza la decisión del DPO ni de Legal.
 - La calidad de la calificación depende del modelo. El cálculo no: es determinista y está verificado contra Python.

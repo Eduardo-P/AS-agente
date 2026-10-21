@@ -210,6 +210,68 @@ const PIMS_PROMPTS = (() => {
 
   const SEM = { 'Cumple': '🟢', 'Parcial': '🟡', 'No cumple': '🔴', 'Sin evidencia': '⚪', 'No aplica': '➖' };
 
+  /* ------------------------------------------------ Radar de cumplimiento (SVG) */
+  /* Dibuja el puntaje base por sección como diagrama de radar. Solo dibuja: los valores
+     vienen de puntaje_proveedor.por_dimension (calculado por código). La misma función,
+     copiada, la usa web/index.html; si cambias una, cambia la otra. */
+  const SECCION_DE = {
+    'Condiciones de recolección y tratamiento': 'A.2.2', 'Obligaciones con los titulares': 'A.2.3',
+    'Privacidad desde el diseño y por defecto': 'A.2.4', 'Compartición, transferencia y comunicación': 'A.2.5',
+    'Consideraciones de seguridad': 'A.3',
+  };
+  function controlesPorEje(nombre, controles) {
+    const sec = SECCION_DE[nombre];
+    if (!sec || !Array.isArray(controles)) return null;
+    return controles.filter((c) => c.control.startsWith(sec + '.') && c.estado !== 'No aplica').length;
+  }
+  function radarSVG(porDimension, controles, colores = {}) {
+    const ejes = Object.entries(porDimension || {});
+    const n = ejes.length;
+    if (n < 3) return '';
+    const col = Object.assign({ tinta: '#1B2A3A', suave: '#4A5A6B', red: '#CDD5DC', area: '#4A5A6B', ref: '#2E7D4F' }, colores);
+    const W = 560, H = 400, cx = W / 2, cy = 205, R = 120;
+    const ang = (i) => (-90 + (360 / n) * i) * Math.PI / 180;
+    const pt = (i, v) => [cx + R * (v / 100) * Math.cos(ang(i)), cy + R * (v / 100) * Math.sin(ang(i))];
+    const f = (x) => x.toFixed(1);
+    const anillo = (v) => ejes.map((_, i) => pt(i, v).map(f).join(',')).join(' ');
+    const escX = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const partir = (t, max) => {
+      const lineas = []; let actual = '';
+      for (const w of t.split(' ')) {
+        if (actual && (actual + ' ' + w).length > max) { lineas.push(actual); actual = w; } else actual = actual ? actual + ' ' + w : w;
+      }
+      if (actual) lineas.push(actual);
+      return lineas;
+    };
+    const o = [];
+    o.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Radar de cumplimiento por sección del Anexo A" style="max-width:100%;height:auto;font-family:system-ui,-apple-system,'Segoe UI',sans-serif">`);
+    o.push(`<title>Radar de cumplimiento por sección del Anexo A de ISO/IEC 27701:2025</title>`);
+    o.push(`<desc>${escX(ejes.map(([k, v]) => `${SECCION_DE[k] || ''} ${k}: ${v === null ? 'sin controles evaluados' : v}`).join('; '))}</desc>`);
+    for (const v of [20, 40, 60, 100]) o.push(`<polygon points="${anillo(v)}" style="fill:none;stroke:${col.red};stroke-width:1"/>`);
+    o.push(`<polygon points="${anillo(80)}" style="fill:none;stroke:${col.ref};stroke-width:1.5;stroke-dasharray:5 4"/>`);
+    ejes.forEach((_, i) => { const [x, y] = pt(i, 100); o.push(`<line x1="${cx}" y1="${cy}" x2="${f(x)}" y2="${f(y)}" style="stroke:${col.red};stroke-width:1"/>`); });
+    for (const v of [20, 40, 60, 80, 100]) o.push(`<text x="${cx + 4}" y="${f(cy - R * v / 100 - 2)}" style="font-size:9px;fill:${v === 80 ? col.ref : col.suave}">${v}</text>`);
+    const area = ejes.map(([, v], i) => pt(i, v === null ? 0 : v).map(f).join(',')).join(' ');
+    o.push(`<polygon points="${area}" style="fill:${col.area};fill-opacity:0.18;stroke:${col.area};stroke-width:2;stroke-linejoin:round"/>`);
+    ejes.forEach(([, v], i) => {
+      const [x, y] = pt(i, v === null ? 0 : v);
+      o.push(`<circle cx="${f(x)}" cy="${f(y)}" r="3.5" style="fill:${v === null ? '#fff' : col.area};stroke:${col.area};stroke-width:1.5"/>`);
+    });
+    ejes.forEach(([k, v], i) => {
+      const a = ang(i), c = Math.cos(a), s = Math.sin(a);
+      const x = cx + (R + 18) * c, y = cy + (R + 18) * s;
+      const anc = Math.abs(c) < 0.2 ? 'middle' : c > 0 ? 'start' : 'end';
+      const nCtl = controlesPorEje(k, controles);
+      const lineas = [`${SECCION_DE[k] ? SECCION_DE[k] + ' · ' : ''}${v === null ? '—' : v}${nCtl === null ? '' : ` (${nCtl} ctrl.)`}`, ...partir(k, 24)];
+      const alto = lineas.length * 13;
+      const y0 = s < -0.5 ? y - alto + 9 : s > 0.5 ? y + 9 : y - alto / 2 + 9;
+      o.push(`<text x="${f(x)}" y="${f(y0)}" style="font-size:11px;fill:${col.tinta}" text-anchor="${anc}">${lineas.map((l, j) => `<tspan x="${f(x)}" dy="${j ? 13 : 0}"${j ? '' : ' style="font-weight:700"'}>${escX(l)}</tspan>`).join('')}</text>`);
+    });
+    o.push(`<text x="12" y="${H - 10}" style="font-size:10px;fill:${col.suave}">Puntaje base por sección, 0-100, sin penalización por alertas. Línea discontinua: 80 (riesgo bajo).</text>`);
+    o.push('</svg>');
+    return o.join('\n');
+  }
+
   function componerInforme(informeModelo, res, cfg, extra = {}) {
     const p = res.puntaje_proveedor, s = res.resumen;
     const cargos = cfg.aprobadores_cargos || {};
@@ -227,9 +289,15 @@ const PIMS_PROMPTS = (() => {
     const sec6 = ['> **Alertas de renovación calculadas por n8n** (fecha de referencia ' + res.trazabilidad.fecha_referencia + '):', '',
       ...(renov.length ? renov.map((a) => `- **${a.prioridad}** — ${a.descripcion}`) : ['- Ninguna.'])].join('\n');
 
-    const dims = Object.entries(p.por_dimension).map(([k, v]) => `| ${k} | ${v === null ? '—' : v} |`);
+    const dims = Object.entries(p.por_dimension).map(([k, v]) => {
+      const nCtl = controlesPorEje(k, res.controles);
+      return `| ${SECCION_DE[k] ? `${SECCION_DE[k]} ` : ''}${k} | ${nCtl === null ? '—' : nCtl} | ${v === null ? '—' : v} |`;
+    });
+    const radar = radarSVG(p.por_dimension, res.controles);
     const sec7 = [nota, '', `**Puntaje total: ${p.valor} / 100 — ${p.banda}.** Base ponderada ${p.base} (críticos ×3; Cumple 1 · Parcial 0,5 · Sin evidencia 0,25 · No cumple 0) − penalización ${p.penalizacion} (5 por alerta Alta, máx. 20).`,
-      '', '| Dimensión | Puntaje base |', '|---|---|', ...dims].join('\n');
+      '', 'Desglose por sección del Anexo A de ISO/IEC 27701:2025 (puntaje base, sin penalización):', '',
+      '| Sección | Controles evaluados | Puntaje base |', '|---|---:|---:|', ...dims,
+      ...(radar ? ['', radar, '', '*Las secciones con pocos controles (A.2.3 tiene uno) varían mucho con una sola calificación.*'] : [])].join('\n');
 
     const sec10 = [`| Paso | Rol | Cargo en la organización | Estado |`, '|---|---|---|---|',
       ...res.aprobacion.secuencia.map((rol, i) => `| ${i + 1} | ${rol} | ${cargos[rol] || rol} | ${i === 0 ? res.aprobacion.estado : 'En espera'} |`)].join('\n');
@@ -675,7 +743,7 @@ const PIMS_PROMPTS = (() => {
   return {
     systemAuditoria, mensajeAuditoria, mensajeCorreccionJSON, esquemaParaModelo, revisarControles, normalizarRegistro, seccion, CONTROLES_24,
     extraerJSON, informeSinJSON,
-    componerInforme, matrizControles, insertarEnSeccion,
+    componerInforme, matrizControles, insertarEnSeccion, radarSVG, controlesPorEje, SECCION_DE,
     trocear, systemPerfilador, mensajeNotas, mensajePerfil, mensajeCorreccionPerfil, limpiarMarkdown,
     presupuestoNotas, compactarNotas, normalizarPerfil, chat, registroParaChat, presupuestoChat,
     systemChat, resumenExpediente, resumenOrganizacion, presupuestoChat, mensajeChat, limpiarRespuestaChat,

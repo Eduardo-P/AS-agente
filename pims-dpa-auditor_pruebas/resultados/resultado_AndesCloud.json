@@ -356,10 +356,11 @@
     "base": 100.0,
     "penalizacion": 0,
     "por_dimension": {
-      "Contractual": 100.0,
-      "Ciclo de vida del dato": 100.0,
-      "Transferencias y sub-encargados": 100.0,
-      "Seguridad e incidentes": 100.0
+      "Condiciones de recolección y tratamiento": 100.0,
+      "Obligaciones con los titulares": 100.0,
+      "Privacidad desde el diseño y por defecto": 100.0,
+      "Compartición, transferencia y comunicación": 100.0,
+      "Consideraciones de seguridad": 100.0
     }
   },
   "remediacion": [],

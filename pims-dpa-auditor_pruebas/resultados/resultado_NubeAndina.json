@@ -431,10 +431,11 @@
     "base": 37.5,
     "penalizacion": 15,
     "por_dimension": {
-      "Contractual": 31.8,
-      "Ciclo de vida del dato": 45.0,
-      "Transferencias y sub-encargados": 42.2,
-      "Seguridad e incidentes": 32.5
+      "Condiciones de recolección y tratamiento": 30.0,
+      "Obligaciones con los titulares": 50.0,
+      "Privacidad desde el diseño y por defecto": 45.0,
+      "Compartición, transferencia y comunicación": 42.2,
+      "Consideraciones de seguridad": 32.5
     }
   },
   "remediacion": [

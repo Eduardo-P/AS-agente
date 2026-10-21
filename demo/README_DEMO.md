@@ -179,8 +179,8 @@ navegador  ──POST /api/auditar──>  servidor_demo.py  ──stdin──> 
   del proveedor.
 - **No es asesoría legal** y **no es una aprobación**: todo resultado queda en
   estado *Pendiente DPO* y luego pasa a Legal.
-- La numeración de los controles proviene de fuentes secundarias y está
-  pendiente de verificar contra el texto oficial licenciado (Anexos A y F).
+- Identificadores y títulos de los controles verificados contra el texto oficial
+  de ISO/IEC 27701:2025; la correspondencia con la edición 2019 sigue pendiente.
 - El informe lo redacta el modelo. En modo seguro el puntaje se calcula a mano
   siguiendo las fórmulas de la skill; la cifra estrictamente determinista la da
   `calcular_resultado.py`, que se puede ejecutar aparte o con

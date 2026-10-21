@@ -521,7 +521,8 @@
           "type": "integer"
         },
         "por_dimension": {
-          "type": "object"
+          "type": "object",
+          "description": "Puntaje base (sin penalización) por sección del Anexo A de ISO/IEC 27701:2025, en orden: A.2.2, A.2.3, A.2.4, A.2.5, A.3. Lo calcula el script."
         }
       }
     },

@@ -122,7 +122,8 @@ Para cada control 🟡, 🔴 o ⚪: acción, cláusula de enmienda (basada en la
 | Control | Ámbito | Requisito (resumen) | Cláusula | Evidencia (cita ≤20 palabras) | Estado | Severidad | Observación |
 ## 5. Contraste con [ley aplicable] y política interna
 ## 6. Alertas (riesgo y renovación)
-## 7. Puntaje del proveedor (total y por dimensión)
+## 7. Puntaje del proveedor (total y por sección del Anexo A: A.2.2, A.2.3, A.2.4, A.2.5, A.3)
+(Copia los valores del script; no los recalcules. En n8n esta tabla y el radar los inserta el sistema)
 ## 8. Plan de remediación
 ## 9. Borrador de correo al proveedor
 ## 10. Aprobaciones requeridas (DPO → Legal)
@@ -135,7 +136,7 @@ Para cada control 🟡, 🔴 o ⚪: acción, cláusula de enmienda (basada en la
 Semáforo: 🟢 Cumple · 🟡 Parcial · 🔴 No cumple · ⚪ Sin evidencia · ➖ No aplica.
 
 ## Limitaciones a declarar en la sección 11
-- Resúmenes de controles parafraseados; la numeración proviene de fuentes secundarias y debe verificarse con el texto oficial licenciado (Anexos A y F).
+- Resúmenes de controles parafraseados (no reproducen la norma); identificadores y títulos verificados contra el texto oficial de ISO/IEC 27701:2025 (Anexo A).
 - El marco legal es un resumen operativo de la jurisdicción configurada; indica su `estado` (y si es "Borrador", que está pendiente de verificación legal).
 - Si se usó un perfil de la organización: su versión, su estado (validado por el DPO o borrador) y que solo aportó contexto, no evidencia de cumplimiento.
 - Evaluación documental: no verifica la implementación técnica real.

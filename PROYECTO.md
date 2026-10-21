@@ -13,7 +13,7 @@ Un sistema que **audita los contratos de encargo de tratamiento (DPA) de los pro
 Para cada contrato entrega:
 
 - una **matriz semáforo** de los 24 controles, con cláusula, cita breve y fuente de la exigencia;
-- un **puntaje de 0 a 100**, por dimensión y total, y un **dictamen** (Recomendable / Recomendable con condiciones / No recomendable sin enmiendas);
+- un **puntaje de 0 a 100**, total y por sección del Anexo A (A.2.2, A.2.3, A.2.4, A.2.5 y A.3, con tabla y diagrama de radar), y un **dictamen** (Recomendable / Recomendable con condiciones / No recomendable sin enmiendas);
 - **alertas** de riesgo y de renovación o vencimiento;
 - un **plan de remediación** con cláusulas de enmienda y un borrador de correo al proveedor;
 - un **registro JSON** para el Registro de DPAs;
@@ -116,6 +116,7 @@ Agregar un país es copiar `jurisdicciones/_plantilla/` y completarla (`jurisdic
 - **Peso:** 3 para los 9 controles críticos (A.2.2.2, A.2.2.3, A.2.4.3, A.2.5.3, A.2.5.7, A.2.5.8, A.2.5.9, A.3.10, A.3.12), 1 para el resto.
 - **Puntaje** = promedio ponderado × 100 − 5 por cada alerta Alta (máximo −20), con mínimo 0.
 - **Banda:** 80 o más riesgo bajo · 50 a 79 riesgo medio · menos de 50 riesgo alto.
+- **Desglose por sección del Anexo A** (puntaje base, sin penalización): A.2.2 Condiciones de recolección y tratamiento · A.2.3 Obligaciones con los titulares · A.2.4 Privacidad desde el diseño y por defecto · A.2.5 Compartición, transferencia y comunicación · A.3 Consideraciones de seguridad. Son las secciones de la propia norma. El informe las muestra en tabla y en un diagrama de radar que dibuja el código.
 - **Dictamen:** el peor entre la regla A (alertas y severidades) y la regla B (puntaje). Un puntaje alto no tapa un hallazgo crítico.
 - **Severidad** de cada control: tabla estado × nivel de riesgo PII.
 - **Alertas de renovación:** contrato vencido, por vencer o con fecha límite de preaviso dentro de la ventana de la organización (60 días por defecto).
@@ -201,7 +202,7 @@ AS-agente-main/
 
 | Prueba | Qué comprueba | Resultado |
 |---|---|---|
-| `pims-dpa-auditor_pruebas/ejecutar_pruebas.py` | Regresión exacta contra la v1.1, jurisdicciones, perfil, validador, compatibilidad | 27/27 |
+| `pims-dpa-auditor_pruebas/ejecutar_pruebas.py` | Regresión exacta contra la v1.1, desglose por sección, jurisdicciones, perfil, validador, compatibilidad | 28/28 |
 | `n8n/pruebas/equivalencia_py_js.py` | El cálculo en JavaScript es idéntico al de Python | 5 012 casos idénticos (incluye 476 empates de redondeo) |
 | `n8n/pruebas/equivalencia_perfil.py` | El validador de perfiles en JavaScript es idéntico al de Python | 1 503 casos idénticos |
 | `n8n/pruebas/probar_flujos.py` | Los 13 flujos con un modelo simulado: auditoría, corrección de JSON, aprobaciones, perfil, errores, seguridad | 30/30 (también sin *Execute Command*) |
@@ -241,7 +242,7 @@ Todos los contratos son ficticios. Los resultados de la UNSA son evaluaciones de
 ## 9. Limitaciones
 
 - **Evaluación documental:** revisa lo que dice el contrato, no lo que el proveedor hace.
-- **Numeración de controles:** proviene de fuentes secundarias; debe verificarse contra el texto oficial licenciado de ISO/IEC 27701:2025.
+- **Verificación normativa:** Los identificadores y títulos de los controles están verificados contra el texto oficial de ISO/IEC 27701:2025; la correspondencia con la edición 2019 sigue pendiente. Los resúmenes son paráfrasis; el texto de la norma no se incluye en el repositorio.
 - **La calificación depende del modelo.** El cálculo no: es determinista y verificado. Con modelos locales pequeños la calidad baja; conviene medirla con los casos de la UNSA.
 - **Solo hay una jurisdicción en uso (Perú).** La plantilla permite agregar otras, pero su contenido debe revisarlo alguien con formación legal.
 - **Herramienta local de demostración:** la página no tiene usuarios ni contraseñas; la aprobación registra quién decidió, no es una firma electrónica.

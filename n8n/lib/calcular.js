@@ -48,11 +48,17 @@ const PIMS_CALC = (() => {
   const DIA = 86400000;
   function iso(ms) { return new Date(ms).toISOString().slice(0, 10); }
 
+  /* Dimensiones del desglose: las secciones del Anexo A de ISO/IEC 27701:2025 (Tablas A.2 y A.3),
+     en el orden de la norma. Títulos parafraseados en español. */
+  const DIMENSIONES = [
+    ['A.2.2', 'Condiciones de recolección y tratamiento'],
+    ['A.2.3', 'Obligaciones con los titulares'],
+    ['A.2.4', 'Privacidad desde el diseño y por defecto'],
+    ['A.2.5', 'Compartición, transferencia y comunicación'],
+    ['A.3', 'Consideraciones de seguridad'],
+  ];
   function dimension(control) {
-    if (control.startsWith('A.2.2.') || control === 'A.2.3.2') return 'Contractual';
-    if (control.startsWith('A.2.4.')) return 'Ciclo de vida del dato';
-    if (control.startsWith('A.2.5.')) return 'Transferencias y sub-encargados';
-    if (control.startsWith('A.3.')) return 'Seguridad e incidentes';
+    for (const [sec, nombre] of DIMENSIONES) if (control.startsWith(sec + '.')) return nombre;
     return 'Marco';
   }
 
@@ -126,10 +132,8 @@ const PIMS_CALC = (() => {
     const penal = Math.min(5 * altas, 20);
     const valor = Math.max(0, pyRound((base || 0) - penal));
     const banda = valor >= 80 ? 'Riesgo bajo' : valor >= 50 ? 'Riesgo medio' : 'Riesgo alto';
-    const dims = {};
-    for (const c of res.controles) (dims[dimension(c.control)] = dims[dimension(c.control)] || []).push(c);
     const porDimension = {};
-    for (const [k, v] of Object.entries(dims)) if (k !== 'Marco') porDimension[k] = baseDe(v);
+    for (const [, nombre] of DIMENSIONES) porDimension[nombre] = baseDe(res.controles.filter((c) => dimension(c.control) === nombre));
     res.puntaje_proveedor = { valor, banda, base, penalizacion: penal, por_dimension: porDimension };
 
     const sevs = new Set(res.controles.map((c) => c.severidad));
@@ -364,7 +368,7 @@ const PIMS_CALC = (() => {
 
   return {
     VERSION_LIB, pyRound, alertasRenovacion, calcular, validar, validarEntrada, sha256Hex,
-    leerPerfil, cargarJurisdiccion, coherenciaPolitica, aplicarContexto, ejecutar, dimension,
+    leerPerfil, cargarJurisdiccion, coherenciaPolitica, aplicarContexto, ejecutar, dimension, DIMENSIONES,
   };
 })();
 

@@ -599,10 +599,11 @@
     "base": 10.1,
     "penalizacion": 20,
     "por_dimension": {
-      "Contractual": 11.4,
-      "Ciclo de vida del dato": 10.0,
-      "Transferencias y sub-encargados": 6.2,
-      "Seguridad e incidentes": 15.0
+      "Condiciones de recolección y tratamiento": 10.0,
+      "Obligaciones con los titulares": 25.0,
+      "Privacidad desde el diseño y por defecto": 10.0,
+      "Compartición, transferencia y comunicación": 6.2,
+      "Consideraciones de seguridad": 15.0
     }
   },
   "dictamen": "No recomendable sin enmiendas",

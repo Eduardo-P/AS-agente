@@ -11,8 +11,9 @@ Completa de forma determinista los campos calculados de una evaluación DPA:
   - hash SHA-256 del documento (opcional)
 y valida el resultado contra assets/esquema_salida.json (validador propio, sin dependencias).
 
-Las reglas de cálculo son idénticas a las de la v1.1: la v2.0 solo añade el contexto
-(organización, jurisdicción, perfil) y la comprobación de coherencia de la política interna.
+Puntaje total, dictamen y alertas se calculan igual que en la v1.1: la v2.0 añade el contexto
+(organización, jurisdicción, perfil) y la comprobación de coherencia de la política interna, y
+desglosa el puntaje por las 5 secciones del Anexo A (antes, 4 dimensiones propias).
 
 Uso:
   # con una organización (lee su config_organizacion.json y, si existe, su perfil_organizacion.md)
@@ -55,15 +56,21 @@ class ErrorContexto(Exception):
     """Configuración, jurisdicción o perfil inválidos: se aborta sin escribir nada."""
 
 
+# Dimensiones del desglose: las secciones del Anexo A de ISO/IEC 27701:2025 (Tablas A.2 y A.3),
+# en el orden de la norma. Títulos parafraseados en español.
+DIMENSIONES = [
+    ("A.2.2", "Condiciones de recolección y tratamiento"),
+    ("A.2.3", "Obligaciones con los titulares"),
+    ("A.2.4", "Privacidad desde el diseño y por defecto"),
+    ("A.2.5", "Compartición, transferencia y comunicación"),
+    ("A.3", "Consideraciones de seguridad"),
+]
+
+
 def dimension(control: str) -> str:
-    if control.startswith("A.2.2.") or control == "A.2.3.2":
-        return "Contractual"
-    if control.startswith("A.2.4."):
-        return "Ciclo de vida del dato"
-    if control.startswith("A.2.5."):
-        return "Transferencias y sub-encargados"
-    if control.startswith("A.3."):
-        return "Seguridad e incidentes"
+    for sec, nombre in DIMENSIONES:
+        if control.startswith(sec + "."):
+            return nombre
     return "Marco"
 
 
@@ -133,12 +140,10 @@ def calcular(res: dict, cfg: dict, ref: date) -> dict:
     penal = min(5 * altas, 20)
     valor = max(0, round((base or 0) - penal))
     banda = "Riesgo bajo" if valor >= 80 else "Riesgo medio" if valor >= 50 else "Riesgo alto"
-    dims = {}
-    for c in res["controles"]:
-        dims.setdefault(dimension(c["control"]), []).append(c)
     res["puntaje_proveedor"] = {
         "valor": valor, "banda": banda, "base": base, "penalizacion": penal,
-        "por_dimension": {k: base_de(v) for k, v in dims.items() if k != "Marco"},
+        "por_dimension": {nombre: base_de([c for c in res["controles"] if dimension(c["control"]) == nombre])
+                          for _, nombre in DIMENSIONES},
     }
 
     # Dictamen: la más desfavorable entre regla A y regla B

@@ -158,7 +158,9 @@ textarea { resize: vertical; min-height: 220px; font-family: var(--mono); font-s
 .cifra .v { font-size: 1.6rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .cifra .e { font-size: 0.85rem; color: var(--tinta-2); }
 .dictamen { font-size: 1.05rem; font-weight: 700; }
-.dims { display: grid; gap: var(--s2); margin-top: var(--s4); max-width: 520px; }
+.desglose { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: var(--s5); align-items: center; margin-top: var(--s4); }
+.radar svg { display: block; width: 100%; max-width: 620px; height: auto; margin: 0 auto; }
+.dims { display: grid; gap: var(--s2); align-content: start; }
 .dim { display: grid; grid-template-columns: 210px 1fr 44px; gap: var(--s3); align-items: center; font-size: 0.88rem; }
 .barra { height: 8px; background: #E6EAEE; border-radius: 4px; overflow: hidden; }
 .barra span { display: block; height: 100%; background: var(--tinta-2); }
@@ -256,6 +258,7 @@ pre.json { max-height: 560px; overflow: auto; font-size: 0.8rem; background: #F4
   main { padding: var(--s5) var(--s4) var(--s7); }
   .dos-col, .expediente-cabecera { grid-template-columns: 1fr; }
   .dim { grid-template-columns: 1fr 1fr 40px; }
+  .desglose { grid-template-columns: 1fr; }
   .hoja { padding: var(--s4); }
   .tabla th, .tabla td { padding: 8px 6px; }
   .tabla .col-opcional { display: none; }
@@ -633,6 +636,68 @@ async function abrirExpediente(id) {
     ir('expediente');
   } catch (e) { avisar(e.message, 'error'); }
 }
+/* ------------------------------------------------ Radar de cumplimiento (SVG) */
+/* Dibuja el puntaje base por sección como diagrama de radar. Solo dibuja: los valores
+   vienen de puntaje_proveedor.por_dimension (calculado por código). Copia de n8n/lib/prompts.js
+   (radarSVG): si cambias una, cambia la otra. */
+const SECCION_DE = {
+  'Condiciones de recolección y tratamiento': 'A.2.2', 'Obligaciones con los titulares': 'A.2.3',
+  'Privacidad desde el diseño y por defecto': 'A.2.4', 'Compartición, transferencia y comunicación': 'A.2.5',
+  'Consideraciones de seguridad': 'A.3',
+};
+function controlesPorEje(nombre, controles) {
+  const sec = SECCION_DE[nombre];
+  if (!sec || !Array.isArray(controles)) return null;
+  return controles.filter((c) => c.control.startsWith(sec + '.') && c.estado !== 'No aplica').length;
+}
+function radarSVG(porDimension, controles, colores = {}) {
+  const ejes = Object.entries(porDimension || {});
+  const n = ejes.length;
+  if (n < 3) return '';
+  const col = Object.assign({ tinta: '#1B2A3A', suave: '#4A5A6B', red: '#CDD5DC', area: '#4A5A6B', ref: '#2E7D4F' }, colores);
+  const W = 560, H = 400, cx = W / 2, cy = 205, R = 120;
+  const ang = (i) => (-90 + (360 / n) * i) * Math.PI / 180;
+  const pt = (i, v) => [cx + R * (v / 100) * Math.cos(ang(i)), cy + R * (v / 100) * Math.sin(ang(i))];
+  const f = (x) => x.toFixed(1);
+  const anillo = (v) => ejes.map((_, i) => pt(i, v).map(f).join(',')).join(' ');
+  const escX = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const partir = (t, max) => {
+    const lineas = []; let actual = '';
+    for (const w of t.split(' ')) {
+      if (actual && (actual + ' ' + w).length > max) { lineas.push(actual); actual = w; } else actual = actual ? actual + ' ' + w : w;
+    }
+    if (actual) lineas.push(actual);
+    return lineas;
+  };
+  const o = [];
+  o.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Radar de cumplimiento por sección del Anexo A" style="max-width:100%;height:auto;font-family:system-ui,-apple-system,'Segoe UI',sans-serif">`);
+  o.push(`<title>Radar de cumplimiento por sección del Anexo A de ISO/IEC 27701:2025</title>`);
+  o.push(`<desc>${escX(ejes.map(([k, v]) => `${SECCION_DE[k] || ''} ${k}: ${v === null ? 'sin controles evaluados' : v}`).join('; '))}</desc>`);
+  for (const v of [20, 40, 60, 100]) o.push(`<polygon points="${anillo(v)}" style="fill:none;stroke:${col.red};stroke-width:1"/>`);
+  o.push(`<polygon points="${anillo(80)}" style="fill:none;stroke:${col.ref};stroke-width:1.5;stroke-dasharray:5 4"/>`);
+  ejes.forEach((_, i) => { const [x, y] = pt(i, 100); o.push(`<line x1="${cx}" y1="${cy}" x2="${f(x)}" y2="${f(y)}" style="stroke:${col.red};stroke-width:1"/>`); });
+  for (const v of [20, 40, 60, 80, 100]) o.push(`<text x="${cx + 4}" y="${f(cy - R * v / 100 - 2)}" style="font-size:9px;fill:${v === 80 ? col.ref : col.suave}">${v}</text>`);
+  const area = ejes.map(([, v], i) => pt(i, v === null ? 0 : v).map(f).join(',')).join(' ');
+  o.push(`<polygon points="${area}" style="fill:${col.area};fill-opacity:0.18;stroke:${col.area};stroke-width:2;stroke-linejoin:round"/>`);
+  ejes.forEach(([, v], i) => {
+    const [x, y] = pt(i, v === null ? 0 : v);
+    o.push(`<circle cx="${f(x)}" cy="${f(y)}" r="3.5" style="fill:${v === null ? '#fff' : col.area};stroke:${col.area};stroke-width:1.5"/>`);
+  });
+  ejes.forEach(([k, v], i) => {
+    const a = ang(i), c = Math.cos(a), s = Math.sin(a);
+    const x = cx + (R + 18) * c, y = cy + (R + 18) * s;
+    const anc = Math.abs(c) < 0.2 ? 'middle' : c > 0 ? 'start' : 'end';
+    const nCtl = controlesPorEje(k, controles);
+    const lineas = [`${SECCION_DE[k] ? SECCION_DE[k] + ' · ' : ''}${v === null ? '—' : v}${nCtl === null ? '' : ` (${nCtl} ctrl.)`}`, ...partir(k, 24)];
+    const alto = lineas.length * 13;
+    const y0 = s < -0.5 ? y - alto + 9 : s > 0.5 ? y + 9 : y - alto / 2 + 9;
+    o.push(`<text x="${f(x)}" y="${f(y0)}" style="font-size:11px;fill:${col.tinta}" text-anchor="${anc}">${lineas.map((l, j) => `<tspan x="${f(x)}" dy="${j ? 13 : 0}"${j ? '' : ' style="font-weight:700"'}>${escX(l)}</tspan>`).join('')}</text>`);
+  });
+  o.push(`<text x="12" y="${H - 10}" style="font-size:10px;fill:${col.suave}">Puntaje base por sección, 0-100, sin penalización por alertas. Línea discontinua: 80 (riesgo bajo).</text>`);
+  o.push('</svg>');
+  return o.join('\n');
+}
+
 function vExpediente() {
   const x = E.expediente; if (!x) return ir('expedientes');
   const r = x.resultado, p = r.puntaje_proveedor || {}, s = r.resumen || {}, ap = r.aprobacion || {};
@@ -668,7 +733,9 @@ function vExpediente() {
     <h2 class="sr">Huella del contrato</h2>
     <div class="huella">${(r.controles || []).map((c) => `<div class="casilla ${CLASE_CONTROL[c.estado] || ''} ${c.ambito === 'Propio Agente 7' ? 'propio' : ''}" title="${esc(c.control)} · ${esc(c.titulo || '')}\n${esc(c.estado)} · severidad ${esc(c.severidad)}\n${esc(c.observacion || '')}">${esc(c.control.replace(/^A\./, ''))}</div>`).join('')}</div>
     <div class="leyenda"><span><i style="background:var(--verde)"></i>Cumple ${s.cumple}</span><span><i style="background:var(--ambar)"></i>Parcial ${s.parcial}</span><span><i style="background:var(--rojo)"></i>No cumple ${s.no_cumple}</span><span><i style="border:1.5px dashed var(--gris)"></i>Sin evidencia ${s.sin_evidencia}</span><span>● ámbito propio del Agente 7</span></div>
-    ${dims.length ? `<div class="dims">${dims.map(([k, v]) => `<div class="dim"><span>${esc(k)}</span><div class="barra"><span style="width:${v ?? 0}%"></span></div><span class="num">${v ?? '—'}</span></div>`).join('')}</div>` : ''}
+    ${dims.length ? `<div class="desglose"><div class="dims">${dims.map(([k, v]) => `<div class="dim"><span>${SECCION_DE[k] ? `<b>${SECCION_DE[k]}</b> ` : ''}${esc(k)}</span><div class="barra"><span style="width:${v ?? 0}%"></span></div><span class="num">${v ?? '—'}</span></div>`).join('')}
+      <p class="nota">Puntaje base por sección del Anexo A de ISO/IEC 27701:2025, sin la penalización por alertas.</p></div>
+      <div class="radar">${radarSVG(p.por_dimension, r.controles, { tinta: 'var(--tinta)', suave: 'var(--tinta-3)', red: 'var(--borde)', area: 'var(--sello)', ref: 'var(--verde)' })}</div></div>` : ''}
     ${turno ? `<div class="decidir no-imprimir">
       <label class="campo">Comentario para el historial <small>Opcional</small><textarea id="d-com" placeholder="${E.rol === 'DPO' ? 'p. ej. Aprobado sujeto a las enmiendas de la sección 8' : 'p. ej. Firma autorizada con la adenda'}"></textarea></label>
       <div class="acciones"><button class="btn violeta" id="d-ok">Aprobar como ${esc(E.rol)}</button><button class="btn peligro" id="d-no">Rechazar</button></div>
@@ -821,7 +888,7 @@ async function vOrganizacion() {
       </div>
       <div id="o-trabajo">${panelTrabajos('perfil')}</div>
       ${brechas.length ? `<h3 style="margin-top:20px">Terceros sin DPA evaluado</h3><p class="nota">Aparecen en el perfil pero no tienen expediente.</p>
-        <table class="tabla" style="margin-top:8px"><tbody>${brechas.map((b) => `<tr><td>${esc(b)}</td><td class="num"><button class="btn sec" data-audit="${esc(b)}">Auditar</button></td></tr>`).join('')}</tbody></table>` : ''}
+        <table class="tabla" style="margin-top:8px"><tbody>${brechas.map((b) => `<tr><td>${esc(b)}</td></tr>`).join('')}</tbody></table>` : ''}
     </section>
   </div>
   <section class="hoja bloque" style="margin-top:24px"><h2>Preguntar sobre ${esc(o.nombre)}</h2><div id="o-chat"></div></section>
@@ -871,7 +938,6 @@ async function vOrganizacion() {
       try { await api('POST', 'perfil/validar', { organizacion: o.id, validado_por: E.usuario }); avisar('Perfil validado.'); pintar(); }
       catch (e) { avisar(e.message, 'error'); }
     };
-    $$('[data-audit]').forEach((b) => b.onclick = () => ir('auditar', { proveedor: b.dataset.audit }));
   }
   $('#o-nueva').onsubmit = async (e) => {
     e.preventDefault();
