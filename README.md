@@ -14,7 +14,7 @@ Funciona para **cualquier organización**: la política interna, los cargos de q
 
 Subes un contrato (PDF, Word, Markdown o texto) y el sistema entrega un expediente con:
 
-- **Matriz semáforo de 24 controles** de ISO/IEC 27701:2025, cada uno con la cláusula, una cita breve y la fuente de la exigencia (norma, ley o política interna).
+- **Matriz semáforo de 26 controles** de ISO/IEC 27701:2025 (18 de la Tabla A.2 y 8 de la Tabla A.3), cada uno con la cláusula, una cita breve y la fuente de la exigencia (norma, ley o política interna).
 - **Puntaje de 0 a 100**, total y por sección del Anexo A de la norma (tabla y **diagrama de radar**), y un **dictamen**: *Recomendable*, *Recomendable con condiciones* o *No recomendable sin enmiendas*.
 - **Alertas** de riesgo (fines propios, transferencias sin garantías, aviso tardío de incidentes, inyección de instrucciones…) y de **renovación o vencimiento**.
 - **Plan de remediación** con cláusulas de enmienda y un borrador de correo al proveedor.
@@ -61,7 +61,7 @@ flowchart LR
 
 | Capa | Contenido | Carpeta |
 |---|---|---|
-| **Norma** | 24 controles de ISO/IEC 27701:2025, criterios del semáforo, fórmula del puntaje, cláusulas modelo | `pims-dpa-auditor/` |
+| **Norma** | 26 controles de ISO/IEC 27701:2025 y las cláusulas 4 a 10 aplicadas en el proceso, criterios del semáforo, fórmula del puntaje, cláusulas modelo | `pims-dpa-auditor/` |
 | **Jurisdicción** | Ley aplicable, autoridad, plazos legales, transferencias | `pims-dpa-auditor/jurisdicciones/<país>/` |
 | **Organización** | Política interna, aprobadores, documentos institucionales y su perfil | `organizaciones/<id>/` |
 
@@ -147,7 +147,7 @@ La primera se ejecuta solo con Python, sin n8n ni modelo.
 ## Limitaciones
 
 - **Evaluación documental:** revisa lo que dice el contrato, no lo que el proveedor hace en la práctica.
-- Los identificadores y títulos de los controles están verificados contra el texto oficial de ISO/IEC 27701:2025; la correspondencia con la edición 2019 sigue pendiente. El texto de la norma tiene licencia: no lo subas al repositorio.
+- Los identificadores y títulos de los controles están verificados contra el texto oficial de ISO/IEC 27701:2025; la evaluación se hace solo contra la edición 2025. El texto de la norma tiene licencia: no lo subas al repositorio.
 - La calidad de la calificación depende del modelo; el cálculo no.
 - Solo la jurisdicción de Perú está en uso; la plantilla permite agregar otras con revisión legal.
 - Herramienta local de demostración: sin usuarios ni contraseñas, y la aprobación registra quién decidió, no es una firma electrónica.

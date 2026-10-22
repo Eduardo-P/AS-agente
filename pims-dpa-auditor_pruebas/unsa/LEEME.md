@@ -56,10 +56,10 @@ python pims-dpa-auditor_pruebas/unsa/comparar_con_referencia.py datos/registro -
 
 ### Cómo leer la comparación
 
-- **Concordancia exacta** y **con alternativas**: porcentaje de los 24 controles con el mismo estado.
+- **Concordancia exacta** y **con alternativas**: porcentaje de los 26 controles con el mismo estado.
 - **Kappa de Cohen**: acuerdo corregido por azar. Más de 0,8 es casi perfecto; entre 0,6 y 0,8, sustancial.
 - **Críticos**: acuerdo en los 9 controles de peso 3. Es lo que más mueve el puntaje.
-- **Dictamen** y **alertas Altas cubiertas**: lo que importa al DPO. Un modelo puede acertar 22 de 24
+- **Dictamen** y **alertas Altas cubiertas**: lo que importa al DPO. Un modelo puede acertar 24 de 26
   controles y aun así cambiar el dictamen si falla un control crítico.
 
 Con el modelo simulado (`n8n/pruebas/modelo_simulado.py`) la comparación da 100 %: eso comprueba el

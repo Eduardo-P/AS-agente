@@ -340,7 +340,7 @@ return $('Entrada').all().map((it) => {
         num_predict: Number(cfg.max_tokens) || 20000 } };
     // Salida estructurada de Ollama en la corrección del JSON (formato_correccion):
     //   'json'    → JSON válido garantizado (sin comentarios); costo casi nulo. Por defecto.
-    //   'esquema' → además la forma exacta (24 controles, valores permitidos); más lento con modelos locales.
+    //   'esquema' → además la forma exacta (26 controles, valores permitidos); más lento con modelos locales.
     //   'ninguno' → sin restricción.
     if (formato && typeof formato === 'object') {
       const modo = cfg.formato_correccion || 'json';
@@ -520,7 +520,7 @@ try {
     f.code("Estado: evaluando", (2420, -200), r"""
 const v = $('Validar petición').first().json;
 return [archivoTrabajo(v.trabajo, { tipo: 'auditoria', organizacion: v.organizacion, proveedor: v.proveedor,
-  estado: 'evaluando', mensaje: 'El modelo está evaluando los 24 controles', inicio: v.inicio })];
+  estado: 'evaluando', mensaje: 'El modelo está evaluando los 26 controles', inicio: v.inicio })];
 """)
     f.llamar("Guardar estado", (2640, -200), "guardar")
     f.code("Petición al modelo", (2860, -200), r"""
@@ -588,7 +588,7 @@ if (!x.ok) return fallar(x.error);
 if (!x.objeto) return fallar('El modelo no entregó el JSON del registro.', { errores: x.errores });
 const obj = x.objeto;
 const incompletos = PIMS_PROMPTS.revisarControles(obj);
-if (incompletos.length) return fallar('El modelo no evaluó los 24 controles, incluso tras una corrección.', { errores: incompletos });
+if (incompletos.length) return fallar('El modelo no evaluó los 26 controles, incluso tras una corrección.', { errores: incompletos });
 obj.trazabilidad = obj.trazabilidad || {};
 obj.trazabilidad.version_skill = obj.trazabilidad.version_skill || '2.0';
 obj.trazabilidad.evaluador = obj.trazabilidad.evaluador || `Agente 7 — ${x.modelo} (${x.proveedor}) vía n8n`;

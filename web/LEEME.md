@@ -17,7 +17,7 @@ La sirve el propio n8n en **http://localhost:5678/webhook/pims/app**. No hay un 
 |---|---|
 | **Auditar un contrato** | Pegar el texto o soltar un `.pdf`, `.docx`, `.md` o `.txt`. Los `.docx` se convierten a texto en el navegador; los PDF los lee n8n. Muestra el avance y avisa cuando el expediente está listo, aunque cambies de pantalla. |
 | **Expedientes** | Todas las auditorías de la organización, con la proporción de controles por estado, el puntaje y el estado de aprobación. |
-| **Expediente** | La *huella* del contrato (24 casillas del semáforo, con su detalle al pasar el cursor), el puntaje, el dictamen, las dimensiones y los **dos sellos de la doble puerta**. Tiene pestañas de informe, alertas, historial y JSON, y permite descargar el `.md` y el `.json` o imprimir. |
+| **Expediente** | La *huella* del contrato (26 casillas del semáforo, con su detalle al pasar el cursor), el puntaje, el dictamen, el desglose por sección (barras y radar) y los **dos sellos de la doble puerta**. Tiene pestañas de informe, alertas, historial y JSON, y permite descargar el `.md` y el `.json` o imprimir. |
 | **Por aprobar** | La bandeja del rol elegido en el riel, DPO o Legal. El contador muestra cuántos expedientes esperan su decisión. |
 | **Organización y perfil** | Subir documentos institucionales, generar el perfil, validarlo como DPO, ver los terceros del perfil sin DPA evaluado (con un botón para auditarlos) y crear organizaciones nuevas. |
 | **Preguntar** (pestaña del expediente y sección de *Organización y perfil*) | Chat con el modelo sobre el expediente o la organización, con sugerencias de preguntas. Las respuestas citan su fuente y la conversación queda guardada. El chat no cambia calificaciones ni aprueba. |

@@ -67,7 +67,7 @@ También se puede pegar cualquier otro contrato en el área de texto.
 ### 4. Hacer clic en "🔍 Auditar DPA"
 
 El panel derecho muestra el progreso real del agente (*cargando la skill →
-analizando los 24 controles, con el contador de tokens de razonamiento →
+analizando los 26 controles, con el contador de tokens de razonamiento →
 redactando el informe*) y el informe se renderiza en vivo, con el semáforo en
 color.
 
@@ -78,7 +78,7 @@ todavía. Atajo: **Ctrl + Enter** desde el área de texto.
 ### 5. Mostrar el informe generado al jurado
 
 Recorrer las 11 secciones: resumen ejecutivo con el dictamen y el puntaje, matriz
-de los 24 controles, contraste con la Ley 29733, alertas, plan de remediación,
+de los 26 controles, contraste con la Ley 29733, alertas, plan de remediación,
 borrador de correo al proveedor y la doble puerta DPO → Legal.
 
 El botón **📥 Descargar informe .md** aparece en la cabecera del panel derecho en
@@ -180,7 +180,7 @@ navegador  ──POST /api/auditar──>  servidor_demo.py  ──stdin──> 
 - **No es asesoría legal** y **no es una aprobación**: todo resultado queda en
   estado *Pendiente DPO* y luego pasa a Legal.
 - Identificadores y títulos de los controles verificados contra el texto oficial
-  de ISO/IEC 27701:2025; la correspondencia con la edición 2019 sigue pendiente.
+  de ISO/IEC 27701:2025; la evaluación se hace solo contra la edición 2025.
 - El informe lo redacta el modelo. En modo seguro el puntaje se calcula a mano
   siguiendo las fórmulas de la skill; la cifra estrictamente determinista la da
   `calcular_resultado.py`, que se puede ejecutar aparte o con

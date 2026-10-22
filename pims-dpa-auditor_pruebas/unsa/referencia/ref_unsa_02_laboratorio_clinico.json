@@ -273,12 +273,12 @@
       "control": "A.3.9",
       "titulo": "Derechos de acceso",
       "ambito": "Insumo SoA (Agente 3)",
-      "clausula_dpa": "10",
-      "evidencia": "El personal del Laboratorio está sujeto al secreto profesional",
-      "estado": "Parcial",
+      "clausula_dpa": "No localizada",
+      "evidencia": "—",
+      "estado": "Sin evidencia",
       "severidad": "Ninguna",
       "fuente_requisito": "ISO 27701",
-      "observacion": "Confidencialidad sí; limitación de acceso no.",
+      "observacion": "Sin limitación del acceso a los datos (la confidencialidad del personal se evalúa en A.3.18).",
       "_alternativas": []
     },
     {
@@ -342,6 +342,32 @@
       "_alternativas": [
         "Parcial"
       ]
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "10",
+      "evidencia": "El personal del Laboratorio está sujeto al secreto profesional",
+      "estado": "Parcial",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Secreto profesional del personal y confidencialidad de los laboratorios de referencia; sin duración ni deber de cumplir las políticas de protección de datos.",
+      "_alternativas": [
+        "Cumple"
+      ]
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "No localizada",
+      "evidencia": "—",
+      "estado": "Sin evidencia",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Sin condiciones de respaldo ni de eliminación de datos en respaldos.",
+      "_alternativas": []
     }
   ],
   "alertas": [
@@ -419,7 +445,7 @@
     },
     {
       "control": "A.3.9",
-      "accion": "Enmendar: Confidencialidad sí; limitación de acceso no.",
+      "accion": "Enmendar: Sin limitación del acceso a los datos (la confidencialidad del personal se evalúa en A.3.18).",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Media"
     },
@@ -444,6 +470,18 @@
     {
       "control": "A.3.15",
       "accion": "Enmendar: Acreditación no reconocida y sin evidencia; no hay informe independiente.",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
+    },
+    {
+      "control": "A.3.18",
+      "accion": "Enmendar: Secreto profesional del personal y confidencialidad de los laboratorios de referencia; sin duración ni deber de cumplir las políticas de protección de datos.",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
+    },
+    {
+      "control": "A.3.24",
+      "accion": "Enmendar: Sin condiciones de respaldo ni de eliminación de datos en respaldos.",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Media"
     }

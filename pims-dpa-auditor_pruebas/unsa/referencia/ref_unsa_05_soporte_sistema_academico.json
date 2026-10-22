@@ -266,12 +266,12 @@
       "control": "A.3.9",
       "titulo": "Derechos de acceso",
       "ambito": "Insumo SoA (Agente 3)",
-      "clausula_dpa": "octava",
-      "evidencia": "guardar reserva absoluta sobre la información a la que tenga acceso",
-      "estado": "Parcial",
+      "clausula_dpa": "No localizada",
+      "evidencia": "—",
+      "estado": "Sin evidencia",
       "severidad": "Ninguna",
       "fuente_requisito": "ISO 27701",
-      "observacion": "Confidencialidad sí; limitación de acceso no.",
+      "observacion": "Acceso remoto a producción sin reglas de control de acceso (la reserva se evalúa en A.3.18).",
       "_alternativas": []
     },
     {
@@ -332,6 +332,32 @@
       "severidad": "Ninguna",
       "fuente_requisito": "ISO 27701",
       "observacion": "",
+      "_alternativas": []
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "octava",
+      "evidencia": "guardar reserva absoluta sobre la información a la que tenga acceso",
+      "estado": "Parcial",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Obliga al Contratista, no se extiende expresamente a su personal.",
+      "_alternativas": [
+        "Cumple"
+      ]
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "No localizada",
+      "evidencia": "—",
+      "estado": "Sin evidencia",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Sin condiciones de respaldo pese al acceso a bases de datos de producción.",
       "_alternativas": []
     }
   ],
@@ -456,7 +482,7 @@
     },
     {
       "control": "A.3.9",
-      "accion": "Enmendar: Confidencialidad sí; limitación de acceso no.",
+      "accion": "Enmendar: Acceso remoto a producción sin reglas de control de acceso (la reserva se evalúa en A.3.18).",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Media"
     },
@@ -481,6 +507,18 @@
     {
       "control": "A.3.15",
       "accion": "Enmendar: Revisión independiente",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
+    },
+    {
+      "control": "A.3.18",
+      "accion": "Enmendar: Obliga al Contratista, no se extiende expresamente a su personal.",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
+    },
+    {
+      "control": "A.3.24",
+      "accion": "Enmendar: Sin condiciones de respaldo pese al acceso a bases de datos de producción.",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Media"
     }

@@ -359,6 +359,32 @@
       "fuente_requisito": "ISO 27701",
       "observacion": "",
       "_alternativas": []
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "12",
+      "evidencia": "sujeto a obligaciones de confidencialidad que subsisten después de terminado el contrato",
+      "estado": "Cumple",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "",
+      "_alternativas": []
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "8",
+      "evidencia": "incluidas las copias de respaldo, dentro de los 60 días siguientes",
+      "estado": "Parcial",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Elimina los respaldos al término, pero no informa los límites del servicio de respaldo ni la restauración.",
+      "_alternativas": [
+        "Sin evidencia"
+      ]
     }
   ],
   "alertas": [
@@ -466,6 +492,12 @@
       "accion": "Enmendar: 72 h superan el máximo interno de 24 h (la UNSA debe notificar a la ANPD en 48 h).",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Alta"
+    },
+    {
+      "control": "A.3.24",
+      "accion": "Enmendar: Elimina los respaldos al término, pero no informa los límites del servicio de respaldo ni la restauración.",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
     }
   ],
   "supuestos": [

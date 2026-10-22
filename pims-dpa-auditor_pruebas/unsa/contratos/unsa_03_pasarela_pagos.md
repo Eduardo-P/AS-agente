@@ -14,7 +14,7 @@ Entre la **Universidad Nacional de San Agustín de Arequipa** (el "Responsable")
 
 **5. Derechos de titulares.** Reenviará toda solicitud en 2 días hábiles y asistirá en su atención en un máximo de 5 días hábiles.
 
-**6. Temporales y transmisión.** Los archivos temporales se eliminan en 7 días. Toda transmisión se cifra con TLS 1.2 o superior y los datos de tarjeta se tokenizan.
+**6. Temporales, transmisión y respaldos.** Los archivos temporales se eliminan en 7 días. Toda transmisión se cifra con TLS 1.2 o superior y los datos de tarjeta se tokenizan. Respaldos diarios cifrados, conservados 30 días, con restauración en máximo 24 horas; el servicio no incluye respaldos más antiguos.
 
 **7. Fin del encargo.** Al término, a elección del Responsable, devolverá o eliminará los datos y respaldos en 30 días y emitirá certificado de eliminación.
 

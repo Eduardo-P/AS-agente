@@ -313,6 +313,26 @@
       "fuente_requisito": "ISO 27701",
       "ambito": "Insumo SoA (Agente 3)",
       "severidad": "Media"
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "clausula_dpa": "No localizada",
+      "evidencia": "",
+      "estado": "Sin evidencia",
+      "fuente_requisito": "ISO 27701",
+      "ambito": "Insumo SoA (Agente 3)",
+      "severidad": "Media"
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "clausula_dpa": "No localizada",
+      "evidencia": "",
+      "estado": "Sin evidencia",
+      "fuente_requisito": "ISO 27701",
+      "ambito": "Insumo SoA (Agente 3)",
+      "severidad": "Media"
     }
   ],
   "alertas": [
@@ -375,21 +395,21 @@
     "cumple": 0,
     "parcial": 1,
     "no_cumple": 9,
-    "sin_evidencia": 14,
+    "sin_evidencia": 16,
     "no_aplica": 0,
     "alertas_altas": 4
   },
   "puntaje_proveedor": {
     "valor": 0,
     "banda": "Riesgo alto",
-    "base": 9.5,
+    "base": 10.2,
     "penalizacion": 20,
     "por_dimension": {
       "Condiciones de recolección y tratamiento": 10.0,
       "Obligaciones con los titulares": 25.0,
       "Privacidad desde el diseño y por defecto": 15.0,
       "Compartición, transferencia y comunicación": 6.2,
-      "Consideraciones de seguridad": 10.0
+      "Consideraciones de seguridad": 12.5
     }
   },
   "remediacion": [

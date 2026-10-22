@@ -265,13 +265,15 @@
       "control": "A.3.9",
       "titulo": "Derechos de acceso",
       "ambito": "Insumo SoA (Agente 3)",
-      "clausula_dpa": "Quinta",
-      "evidencia": "guardará reserva sobre lo observado en el ejercicio de sus funciones",
-      "estado": "Parcial",
+      "clausula_dpa": "No localizada",
+      "evidencia": "—",
+      "estado": "Sin evidencia",
       "severidad": "Alta",
       "fuente_requisito": "ISO 27701",
-      "observacion": "Reserva sí; limitación de acceso no.",
-      "_alternativas": []
+      "observacion": "Acceso remoto amplio a cámaras y grabaciones (cláusula cuarta) sin reglas de control de acceso.",
+      "_alternativas": [
+        "No cumple"
+      ]
     },
     {
       "control": "A.3.10",
@@ -333,6 +335,30 @@
       "severidad": "Alta",
       "fuente_requisito": "ISO 27701",
       "observacion": "",
+      "_alternativas": []
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "Quinta",
+      "evidencia": "guardará reserva sobre lo observado en el ejercicio de sus funciones",
+      "estado": "Parcial",
+      "severidad": "Alta",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Reserva limitada a lo observado, sin duración ni alcance a los datos y grabaciones.",
+      "_alternativas": []
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "No localizada",
+      "evidencia": "—",
+      "estado": "Sin evidencia",
+      "severidad": "Alta",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Conserva grabaciones 180 días, pero no hay condiciones de respaldo ni de su eliminación.",
       "_alternativas": []
     }
   ],
@@ -505,7 +531,7 @@
     },
     {
       "control": "A.3.9",
-      "accion": "Enmendar: Reserva sí; limitación de acceso no.",
+      "accion": "Enmendar: Acceso remoto amplio a cámaras y grabaciones (cláusula cuarta) sin reglas de control de acceso.",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Media"
     },
@@ -536,6 +562,18 @@
     {
       "control": "A.3.15",
       "accion": "Enmendar: Revisión independiente",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
+    },
+    {
+      "control": "A.3.18",
+      "accion": "Enmendar: Reserva limitada a lo observado, sin duración ni alcance a los datos y grabaciones.",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
+    },
+    {
+      "control": "A.3.24",
+      "accion": "Enmendar: Conserva grabaciones 180 días, pero no hay condiciones de respaldo ni de su eliminación.",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Media"
     }
@@ -589,21 +627,21 @@
     "cumple": 0,
     "parcial": 2,
     "no_cumple": 9,
-    "sin_evidencia": 13,
+    "sin_evidencia": 15,
     "no_aplica": 0,
     "alertas_altas": 4
   },
   "puntaje_proveedor": {
     "valor": 0,
     "banda": "Riesgo alto",
-    "base": 10.1,
+    "base": 10.8,
     "penalizacion": 20,
     "por_dimension": {
       "Condiciones de recolección y tratamiento": 10.0,
       "Obligaciones con los titulares": 25.0,
       "Privacidad desde el diseño y por defecto": 10.0,
       "Compartición, transferencia y comunicación": 6.2,
-      "Consideraciones de seguridad": 15.0
+      "Consideraciones de seguridad": 16.7
     }
   },
   "dictamen": "No recomendable sin enmiendas",

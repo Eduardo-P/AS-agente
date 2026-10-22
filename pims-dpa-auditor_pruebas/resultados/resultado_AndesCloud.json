@@ -72,7 +72,7 @@
     "renovacion_automatica": true,
     "preaviso_terminacion_dias": 60,
     "estado_dpa": "Pendiente DPO",
-    "hash_documento_sha256": "40de16dbfdd638a30bfcc42171bb485c7da9995f3f173f68c39cdbf6c0daeb64"
+    "hash_documento_sha256": "0b6cc5edcbef985d2adbbf7328120a0a0ac4fadcce31eadfaea45ccf0df1fa1e"
   },
   "nivel_riesgo_pii": "Medio",
   "certificaciones": [
@@ -283,7 +283,7 @@
       "control": "A.3.9",
       "titulo": "Acceso",
       "clausula_dpa": "11",
-      "evidencia": "confidencialidad que subsiste tras la relación",
+      "evidencia": "Acceso limitado al personal que lo necesita",
       "estado": "Cumple",
       "fuente_requisito": "ISO 27701",
       "ambito": "Insumo SoA (Agente 3)",
@@ -338,12 +338,32 @@
       "fuente_requisito": "ISO 27701",
       "ambito": "Insumo SoA (Agente 3)",
       "severidad": "Ninguna"
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "clausula_dpa": "11",
+      "evidencia": "con confidencialidad que subsiste tras la relación",
+      "estado": "Cumple",
+      "fuente_requisito": "ISO 27701",
+      "ambito": "Insumo SoA (Agente 3)",
+      "severidad": "Ninguna"
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "clausula_dpa": "6",
+      "evidencia": "Respaldos diarios cifrados, conservados 30 días, con restauración en máximo 24 horas",
+      "estado": "Cumple",
+      "fuente_requisito": "ISO 27701",
+      "ambito": "Insumo SoA (Agente 3)",
+      "severidad": "Ninguna"
     }
   ],
   "alertas": [],
   "dictamen": "Recomendable",
   "resumen": {
-    "cumple": 24,
+    "cumple": 26,
     "parcial": 0,
     "no_cumple": 0,
     "sin_evidencia": 0,

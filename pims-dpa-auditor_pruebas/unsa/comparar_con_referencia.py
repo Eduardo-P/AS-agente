@@ -8,7 +8,7 @@ comparar_con_referencia.py — Mide qué tan cerca está un modelo de las evalua
 exportados desde la página). Cada uno se empareja con su referencia por el nombre del proveedor.
 
 Métricas por contrato y globales:
-  - Concordancia exacta por control (24 por contrato) y concordancia aceptando las alternativas
+  - Concordancia exacta por control (26 por contrato) y concordancia aceptando las alternativas
     de los controles "discutibles".
   - Kappa de Cohen sobre los estados (Cumple / Parcial / No cumple / Sin evidencia / No aplica):
     corrige el acuerdo que se daría por azar. Lectura habitual: >0,8 casi perfecto; 0,6-0,8 sustancial.

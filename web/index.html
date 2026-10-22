@@ -133,7 +133,7 @@ textarea { resize: vertical; min-height: 220px; font-family: var(--mono); font-s
 .banda-alto { color: var(--rojo); } .banda-medio { color: var(--ambar); } .banda-bajo { color: var(--verde); }
 
 /* ---------------------------------------------------------------------------
-   Huella del contrato: 24 casillas del semáforo
+   Huella del contrato: una casilla por control (26) del semáforo
    ------------------------------------------------------------------------ */
 .huella { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 3px; }
 .casilla {
@@ -531,7 +531,7 @@ function cargarMammoth() {
 
 /* ---- Seguimiento de trabajos (auditorías y perfiles) en segundo plano ---- */
 const PASOS = {
-  auditoria: [['en_cola', 'Recibido'], ['evaluando', 'El modelo evalúa los 24 controles'], ['calculando', 'Cálculo determinista y expediente'], ['terminado', 'Listo']],
+  auditoria: [['en_cola', 'Recibido'], ['evaluando', 'El modelo evalúa los 26 controles'], ['calculando', 'Cálculo determinista y expediente'], ['terminado', 'Listo']],
   perfil: [['en_cola', 'Recibido'], ['extrayendo', 'Extracción de notas de cada documento'], ['redactando', 'Redacción y validación del perfil'], ['terminado', 'Listo']],
 };
 function seguirTrabajo(id, meta) {

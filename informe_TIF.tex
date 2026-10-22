@@ -219,7 +219,7 @@ Arequipa, 2026\par
 \section*{Resumen}
 \addcontentsline{toc}{section}{Resumen}
 
-\noindent Los proveedores que tratan datos personales por cuenta de una organización deben estar vinculados por un contrato de encargo (DPA) que cumpla ISO/IEC 27701:2025 y la ley de protección de datos aplicable; en el Perú, la Ley N.º 29733 y su Reglamento. Revisar esos contratos es una tarea repetitiva y propensa a inconsistencias. En la primera entrega de este Trabajo de Investigación Formativa se transformó una instrucción abierta a un modelo de lenguaje en una skill reutilizable, \texttt{pims-dpa-auditor}, que evalúa 24 controles de la norma, aplica un semáforo con reglas deterministas y calcula un puntaje de proveedor de 0 a 100 mediante un script. Este informe presenta la versión 2.0, que convierte la skill en un sistema funcional: (1) la separa en tres capas intercambiables (norma, jurisdicción y organización), de modo que sirve para cualquier organización y país sin modificar sus reglas; (2) incorpora una segunda skill que resume los documentos institucionales de la organización (ROF, MOF, TUPA, procesos) en un perfil que solo puede endurecer la evaluación; (3) orquesta todo el proceso con n8n, con un modelo de lenguaje intercambiable entre Claude, Ollama y otras API; (4) ofrece una página web con la doble aprobación humana del DPO y de Legal; y (5) añade un chat para preguntar al modelo sobre cada expediente o sobre la organización, sin que pueda modificar los resultados. El cálculo determinista se reimplementó en JavaScript y resultó idéntico al de Python en 5\,012 casos. La versión 2.0 se validó con 27 pruebas de regresión, 30 pruebas de los flujos de n8n y 10 recorridos de la página, y se preparó un caso de aplicación con cinco contratos supuestos de la Universidad Nacional de San Agustín de Arequipa (UNSA), con evaluaciones de referencia y un comparador que mide la concordancia de cualquier modelo mediante el coeficiente kappa de Cohen. Una prueba preliminar con un modelo local de 7\,000 millones de parámetros mostró que el sistema funciona de punta a punta en un equipo personal, pero también que los modelos pequeños requieren controles adicionales sobre el formato de su respuesta.
+\noindent Los proveedores que tratan datos personales por cuenta de una organización deben estar vinculados por un contrato de encargo (DPA) que cumpla ISO/IEC 27701:2025 y la ley de protección de datos aplicable; en el Perú, la Ley N.º 29733 y su Reglamento. Revisar esos contratos es una tarea repetitiva y propensa a inconsistencias. En la primera entrega de este Trabajo de Investigación Formativa se transformó una instrucción abierta a un modelo de lenguaje en una skill reutilizable, \texttt{pims-dpa-auditor}, que evalúa 26 controles de la norma, aplica un semáforo con reglas deterministas y calcula un puntaje de proveedor de 0 a 100 mediante un script. Este informe presenta la versión 2.0, que convierte la skill en un sistema funcional: (1) la separa en tres capas intercambiables (norma, jurisdicción y organización), de modo que sirve para cualquier organización y país sin modificar sus reglas; (2) incorpora una segunda skill que resume los documentos institucionales de la organización (ROF, MOF, TUPA, procesos) en un perfil que solo puede endurecer la evaluación; (3) orquesta todo el proceso con n8n, con un modelo de lenguaje intercambiable entre Claude, Ollama y otras API; (4) ofrece una página web con la doble aprobación humana del DPO y de Legal; y (5) añade un chat para preguntar al modelo sobre cada expediente o sobre la organización, sin que pueda modificar los resultados. El cálculo determinista se reimplementó en JavaScript y resultó idéntico al de Python en 5\,012 casos. La versión 2.0 se validó con 27 pruebas de regresión, 30 pruebas de los flujos de n8n y 10 recorridos de la página, y se preparó un caso de aplicación con cinco contratos supuestos de la Universidad Nacional de San Agustín de Arequipa (UNSA), con evaluaciones de referencia y un comparador que mide la concordancia de cualquier modelo mediante el coeficiente kappa de Cohen. Una prueba preliminar con un modelo local de 7\,000 millones de parámetros mostró que el sistema funciona de punta a punta en un equipo personal, pero también que los modelos pequeños requieren controles adicionales sobre el formato de su respuesta.
 
 \vspace{10pt}
 \noindent\textit{Palabras clave:} ISO/IEC 27701:2025; PIMS; encargado del tratamiento; DPA; Ley N.º 29733; IA agéntica; skill; orquestación; n8n; modelos de lenguaje locales; supervisión humana
@@ -314,6 +314,35 @@ F & Informativo & Correspondencia con la edición ISO/IEC 27701:2019 \\
 \end{table}
 
 Un cambio importante respecto a la edición 2019 es la numeración. En 2019, los controles para encargados se ubicaban en el Anexo B con identificadores B.8.x.x; en 2025 pasan a la Tabla A.2 con identificadores A.2.x.x (ISO, 2019, 2025; ISMS.online, 2025). El diseño original del proyecto citaba controles inexistentes (``B.9.2'', ``B.10.2''), error que se corrigió durante la validación del plan (véase la sección \nameref{sec:metodologia}).
+
+\subsection{Partes de la norma que usa el agente}
+\label{sec:alcance-norma}
+
+El Anexo A de ISO/IEC 27701:2025 tiene 78 controles. El agente califica en cada contrato 26: los 18 de la Tabla A.2, que describen lo que el contrato debe obligar al encargado, y 8 de la Tabla A.3 que se reflejan en un contrato de encargo: derechos de acceso (A.3.9), seguridad en acuerdos con proveedores (A.3.10), planificación y respuesta a incidentes (A.3.11 y A.3.12), requisitos legales (A.3.13), revisión independiente (A.3.15), acuerdos de confidencialidad (A.3.18) y respaldo de información (A.3.24). Los demás controles de la Tabla A.3 son internos de la seguridad del proveedor; los que tienen relación con el contrato, como la criptografía (A.3.26) o la autenticación (A.3.23), se revisan como señales dentro de A.3.9 y A.3.10. La Tabla A.1 corresponde al responsable: de ella se toma A.1.2.7, contratos con encargados, como control marco, porque auditar los contratos es la forma en que la organización lo cumple.
+
+Las cláusulas 4 a 10 de la norma son requisitos del sistema de gestión de la organización, no del proveedor: un contrato no puede demostrar que la organización evalúa sus riesgos o hace auditorías internas. Por eso no se califican como controles, pero el agente las aplica en su proceso (Tabla~\ref{tab:clausulas}), y cada informe incluye una sección que muestra cómo se aplicaron en ese expediente.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Cláusulas de ISO/IEC 27701:2025 aplicadas en el proceso del agente}
+\label{tab:clausulas}
+\begin{tabularx}{\linewidth}{@{}L{4.2cm} Y@{}}
+\toprule
+\textbf{Cláusula} & \textbf{Cómo la aplica el agente} \\
+\midrule
+4.1 Contexto: rol de la organización & Determina el rol del proveedor en cada tratamiento (encargado, sub-encargado, rol no confirmado o invertido). \\
+4.2 Partes interesadas: ``cliente'' & Para un sub-encargado, el ``cliente'' es el encargado principal: los controles de sub-encargados se leen en cascada. \\
+6.1.2 y 8.2 Evaluación de riesgos & El nivel de riesgo de los datos y las alertas son insumo de la evaluación de riesgos; un riesgo alto, una alerta alta o transferencias y sub-encargados piden reevaluarla. \\
+6.1.3 e) Declaración de aplicabilidad & ``No aplica'' solo con justificación; los controles de insumo se envían a la SoA (Agente 3). \\
+7.4 Comunicación & Borrador de correo al proveedor con las enmiendas. \\
+7.5 Información documentada & Expediente con versiones, huella SHA-256 del contrato y trazabilidad. \\
+8.1 Procesos externos & La auditoría y la doble aprobación son el control del proveedor como proceso externo. \\
+9.1 Seguimiento & Alertas de vencimiento y renovación, revisadas cada semana. \\
+10.2 No conformidades & Cada control que no cumple lleva su acción correctiva en el plan de remediación. \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \subsection{Responsable y encargado del tratamiento}
 
@@ -457,7 +486,7 @@ Algunas definiciones correspondían, en una organización real, al Oficial de Da
 \toprule
 \textbf{Tema} & \textbf{Decisión y justificación} \\
 \midrule
-Versión de la norma & ISO/IEC 27701:2025, por ser la edición vigente. Se conserva la equivalencia con 2019 para leer contratos y certificados antiguos. \\
+Versión de la norma & ISO/IEC 27701:2025, por ser la edición vigente. La evaluación se hace solo contra esta edición. \\
 Perspectiva & La organización usuaria es el responsable; el proveedor es el encargado evaluado. \\
 Aprobación & Doble puerta humana secuencial: primero el DPO valida el dictamen y luego Legal aprueba la firma o las enmiendas. \\
 Plazo de aviso de incidentes & Máximo 24 horas por defecto, para dejar margen frente a las 48 horas que el responsable tiene ante la ANPD. Configurable por organización. \\
@@ -502,7 +531,7 @@ Esta instrucción deja al modelo decidir qué revisar, contra qué fuente, con q
 \toprule
 \textbf{Aspecto} & \textbf{Prompt básico} & \textbf{Skill \texttt{pims-dpa-auditor}} \\
 \midrule
-Qué se evalúa & Lo que el modelo considere relevante & Lista fija de 24 controles \\
+Qué se evalúa & Lo que el modelo considere relevante & Lista fija de 26 controles \\
 Fuente normativa & Memoria del modelo, con riesgo de citar controles inexistentes & Referencia propia con identificadores verificados \\
 Criterio & Implícito y variable & Reglas escritas de semáforo, severidad y dictamen \\
 Cláusulas vagas & Pueden aceptarse como cumplimiento & Nunca se califican como cumplimiento \\
@@ -545,7 +574,7 @@ La transformación consiste en convertir la instrucción en un proceso con entra
   7. Remediación\\
   8. Cálculo y salidas};
 \node[caja, right=of proc] (out) {\textbf{Salidas}\\[2pt]
-  \scriptsize Informe para DPO y Legal (11 secciones)\\
+  \scriptsize Informe para DPO y Legal (12 secciones)\\
   JSON para el Registro de DPAs\\
   Borrador de correo al proveedor};
 \draw[flecha] (in) -- (proc);
@@ -614,7 +643,7 @@ El Código~\ref{lst:estructura} muestra la organización de archivos de la versi
 pims-dpa-auditor/
 |-- SKILL.md                         Identidad, 9 reglas y flujo de 8 pasos
 |-- references/
-|   |-- controles_iso27701_2025.md   Lista de verificación de 24 controles
+|   |-- controles_iso27701_2025.md   Lista de verificación de 26 controles
 |   `-- criterios_semaforo.md        Reglas de calificación y puntaje
 |-- jurisdicciones/
 |   |-- peru/
@@ -657,7 +686,7 @@ La Figura~\ref{fig:flujo} muestra el flujo de ocho pasos y la bifurcación segú
 \node[alterno, right=12mm of d] (inv) {\textbf{Rol invertido o responsable}\\ Informe breve; no se aplica la matriz};
 \node[paso, below=of d] (s2) {\textbf{2. Nivel de riesgo PII}\\ \scriptsize Alto, Medio o Bajo; el más alto entre contrato y perfil};
 \node[paso, below=of s2] (s3) {\textbf{3. Idoneidad}\\ \scriptsize Certificaciones, vigencia, uso de IA};
-\node[paso, below=of s3] (s4) {\textbf{4. Contraste por control}\\ \scriptsize 24 controles, cita breve, estado, ámbito};
+\node[paso, below=of s3] (s4) {\textbf{4. Contraste por control}\\ \scriptsize 26 controles, cita breve, estado, ámbito};
 \node[paso, below=of s4] (s5) {\textbf{5. Contraste legal y de política}\\ \scriptsize Plazos frente a la ley y la política interna};
 \node[paso, below=of s5] (s6) {\textbf{6. Alertas}\\ \scriptsize Riesgo y renovación};
 \node[paso, below=of s6] (s7) {\textbf{7. Remediación}\\ \scriptsize Cláusulas de enmienda y borrador de correo};
@@ -712,7 +741,7 @@ Cada certificación se clasifica como \emph{verificada con evidencia}, \emph{dec
 
 \subsubsection{Paso 4: contraste por control}
 
-Para cada uno de los 24 controles la skill registra la cláusula del contrato, una cita textual de hasta 20 palabras, el estado, el ámbito y la fuente del requisito. La lista de controles se detalla en el \hyperref[anx:controles]{Anexo A}.
+Para cada uno de los 26 controles la skill registra la cláusula del contrato, una cita textual de hasta 20 palabras, el estado, el ámbito y la fuente del requisito. La lista de controles se detalla en el \hyperref[anx:controles]{Anexo A}.
 
 \subsubsection{Paso 5: contraste legal y de política interna}
 
@@ -804,7 +833,7 @@ P_{\text{base}} = \frac{\sum_{i} w_i \, f_i}{\sum_{i} w_i} \times 100
 P = \max\bigl(0,\; \operatorname{redondeo}(P_{\text{base}} - \min(5\,n_A,\, 20))\bigr)
 \end{equation}
 
-\noindent donde $f_i$ es el factor del estado del control $i$ (Cumple 1,0; Parcial 0,5; Sin evidencia 0,25; No cumple 0; No aplica se excluye), $w_i$ es su peso (3 para controles críticos, 1 para los demás) y $n_A$ es el número de alertas de prioridad Alta. El redondeo es el de Python (al par más cercano en los empates, como 22,5), que la versión en JavaScript reproduce. El puntaje se clasifica en tres bandas: 80 a 100, riesgo bajo; 50 a 79, riesgo medio; 0 a 49, riesgo alto. Se calcula además el puntaje base de cada una de las cinco secciones del Anexo A de la norma, que agrupan los 24 controles evaluados (Tabla~\ref{tab:secciones}). Las secciones son las de la propia norma y se usan con su título; el proyecto no define agrupaciones propias.
+\noindent donde $f_i$ es el factor del estado del control $i$ (Cumple 1,0; Parcial 0,5; Sin evidencia 0,25; No cumple 0; No aplica se excluye), $w_i$ es su peso (3 para controles críticos, 1 para los demás) y $n_A$ es el número de alertas de prioridad Alta. El redondeo es el de Python (al par más cercano en los empates, como 22,5), que la versión en JavaScript reproduce. El puntaje se clasifica en tres bandas: 80 a 100, riesgo bajo; 50 a 79, riesgo medio; 0 a 49, riesgo alto. Se calcula además el puntaje base de cada una de las cinco secciones del Anexo A de la norma, que agrupan los 26 controles evaluados (Tabla~\ref{tab:secciones}). Las secciones son las de la propia norma y se usan con su título; el proyecto no define agrupaciones propias.
 
 \begin{table}[H]
 \centering
@@ -819,10 +848,10 @@ A.2.2 & Condiciones de recolección y tratamiento & 6 \\
 A.2.3 & Obligaciones con los titulares & 1 \\
 A.2.4 & Privacidad desde el diseño y por defecto & 3 \\
 A.2.5 & Compartición, transferencia y comunicación de datos & 8 \\
-A.3 & Consideraciones de seguridad (controles compartidos) & 6 \\
+A.3 & Consideraciones de seguridad (controles compartidos) & 8 \\
 \bottomrule
 \end{tabularx}
-\notaapa{A.2.2 a A.2.5 son los encabezados de la Tabla A.2 (encargados). De la Tabla A.3, que tiene un solo encabezado y 29 controles, se usan los seis que se reflejan en un contrato: A.3.9 a A.3.13 y A.3.15. A.2.3 tiene un solo control, por lo que su valor solo puede ser 0, 25, 50 o 100.}
+\notaapa{A.2.2 a A.2.5 son los encabezados de la Tabla A.2 (encargados). De la Tabla A.3, que tiene un solo encabezado y 29 controles, se usan los ocho que se reflejan en un contrato: A.3.9 a A.3.13, A.3.15, A.3.18 y A.3.24. A.2.3 tiene un solo control, por lo que su valor solo puede ser 0, 25, 50 o 100.}
 \end{table}
 
 Cada informe muestra este desglose como tabla y como diagrama de radar, con escala fija de 0 a 100 y una línea de referencia en 80, el umbral de riesgo bajo. El radar lo dibuja el código a partir de los mismos valores, por lo que no introduce ninguna cifra nueva. En la versión 2.0 inicial el desglose usaba cuatro dimensiones definidas por el grupo (contractual, ciclo de vida del dato, transferencias y sub-encargados, y seguridad e incidentes); se reemplazaron por las secciones de la norma para que cada eje sea trazable a ella. El cambio no afecta el puntaje total ni el dictamen, que no dependen del desglose.
@@ -871,7 +900,7 @@ Media & Renovación & Certificación vencida o informe SOC 2 con más de 12 mese
 
 \subsubsection{Informe para la doble puerta de aprobación}
 
-El informe tiene una estructura fija de once secciones: resumen ejecutivo; ficha del tercero, rol y vigencia; idoneidad; matriz de controles; contraste con la ley aplicable y la política interna; alertas; puntaje; plan de remediación; borrador de correo; aprobaciones requeridas; y supuestos, limitaciones y trazabilidad. Cuando la evaluación la orquesta n8n, las tablas de las secciones 1, 6, 7, 10 y 11 las inserta el código a partir del cálculo, de modo que ninguna cifra del informe proviene del modelo.
+El informe tiene una estructura fija de doce secciones: resumen ejecutivo; ficha del tercero, rol y vigencia; idoneidad; matriz de controles; contraste con la ley aplicable y la política interna; alertas; puntaje; plan de remediación; borrador de correo; aprobaciones requeridas; supuestos, limitaciones y trazabilidad; y cláusulas de la norma aplicadas (Tabla~\ref{tab:clausulas}). Cuando la evaluación la orquesta n8n, las tablas de las secciones 1, 6, 7, 10, 11 y 12 las inserta el código a partir del cálculo, de modo que ninguna cifra del informe proviene del modelo.
 
 \subsubsection{JSON para el Registro de DPAs}
 
@@ -986,11 +1015,11 @@ Las instrucciones se expresaron como reglas no negociables. La versión 2.0 exte
 
 \subsection{Propósito limitado}
 
-La arquitectura del proyecto establece el principio de propósito limitado por agente. La skill evalúa 24 controles porque todos se reflejan en un contrato, pero distingue dos ámbitos:
+La arquitectura del proyecto establece el principio de propósito limitado por agente. La skill evalúa 26 controles porque todos se reflejan en un contrato, pero distingue dos ámbitos:
 
 \begin{itemize}
-  \item \textbf{Propios del Agente 7:} A.1.2.7 (control marco del responsable), A.2.5.7, A.2.5.8, A.2.5.9 y A.3.10. Sobre ellos decide este agente.
-  \item \textbf{Insumo para el Agente 3 (Controles y SoA):} los 19 restantes. Se evalúan y se envían como insumo, pero el Agente 3 consolida su estado en la Declaración de Aplicabilidad.
+  \item \textbf{Propios del Agente 7:} A.2.5.7, A.2.5.8, A.2.5.9 y A.3.10. Sobre ellos decide este agente. A.1.2.7, el control marco del responsable, no se califica: auditar los contratos es la forma de cumplirlo.
+  \item \textbf{Insumo para el Agente 3 (Controles y SoA):} los 22 restantes. Se evalúan y se envían como insumo, pero el Agente 3 consolida su estado en la Declaración de Aplicabilidad.
 \end{itemize}
 
 \subsection{Base de conocimiento}
@@ -1006,7 +1035,7 @@ El plan inicial proponía indexar el texto completo de las normas ISO en una bas
 \toprule
 \textbf{Archivo} & \textbf{Contenido} \\
 \midrule
-\texttt{controles\_iso27701\_2025.md} & Paráfrasis propias de 24 controles: qué debe exigir el DPA, señales de incumplimiento, equivalencia con 2019 y ámbito. \\
+\texttt{controles\_iso27701\_2025.md} & Paráfrasis propias de 26 controles: qué debe exigir el DPA, señales de incumplimiento, guía de implementación del Anexo B y ámbito. \\
 \texttt{criterios\_semaforo.md} & Reglas de riesgo PII, estado, severidad, dictamen, alertas y puntaje. \\
 \texttt{jurisdicciones/peru/} & Obligaciones de la Ley N.º 29733 y su Reglamento sobre encargo, incidentes, flujo transfronterizo, seguridad y oficial de datos, en texto y en forma estructurada. \\
 \texttt{plantilla\_dpa\_baseline.md} & 17 cláusulas modelo mapeadas a controles, redactadas por el grupo, con la ley y la autoridad como parámetros. \\
@@ -1016,7 +1045,7 @@ El plan inicial proponía indexar el texto completo de las normas ISO en una bas
 \end{tabularx}
 \end{table}
 
-\par\noindent \textbf{Uso de fuentes.} Los resúmenes de controles son paráfrasis elaboradas por el grupo con fines académicos; no reproducen la norma. Los identificadores se obtuvieron inicialmente de fuentes secundarias; en la segunda entrega se verificaron contra el texto oficial de ISO/IEC 27701:2025, y coinciden los 24 controles con sus títulos y su ubicación en las Tablas A.2 y A.3. La lista de verificación se afinó con la guía de implementación del Anexo B, siempre parafraseada. Sigue pendiente verificar la correspondencia con la edición 2019 (Anexo F), que se usa solo como ayuda para leer contratos antiguos. El texto de la norma no se incluye en el repositorio por estar sujeto a licencia.
+\par\noindent \textbf{Uso de fuentes.} Los resúmenes de controles son paráfrasis elaboradas por el grupo con fines académicos; no reproducen la norma. Los identificadores se obtuvieron inicialmente de fuentes secundarias; en la segunda entrega se verificaron contra el texto oficial de ISO/IEC 27701:2025, y la lista de verificación se afinó con la guía de implementación del Anexo B, siempre parafraseada. En esa revisión se añadieron dos controles de la Tabla A.3 que se reflejan en un contrato (A.3.18 y A.3.24), se precisaron A.3.9 y A.3.12, y se retiró la equivalencia con la edición 2019: la evaluación se hace solo contra la edición 2025. El texto de la norma no se incluye en el repositorio por estar sujeto a licencia.
 \par
 
 \subsection{Ubicación en la arquitectura multiagente}
@@ -1108,7 +1137,7 @@ La versión 1.1 tenía mezcladas en sus archivos tres clases de conocimiento que
                minimum width=11.5cm, minimum height=1.25cm, align=left, inner sep=6pt, text width=11cm},
   flecha/.style={-{Latex[length=2mm]}, draw=tintaMedia, line width=0.7pt}
 ]
-\node[capa, fill=gray!22] (norma) {\textbf{Norma} --- ISO/IEC 27701:2025\\ \scriptsize 24 controles, criterios del semáforo, fórmula del puntaje, cláusulas modelo. Fija para todos.};
+\node[capa, fill=gray!22] (norma) {\textbf{Norma} --- ISO/IEC 27701:2025\\ \scriptsize 26 controles, cláusulas 4 a 10, criterios, fórmula del puntaje, cláusulas modelo. Fija para todos.};
 \node[capa, fill=gray!12, below=3mm of norma] (jur) {\textbf{Jurisdicción} --- \texttt{jurisdicciones/peru/}\\ \scriptsize Ley aplicable, autoridad, plazos legales, transferencias. Cambia con el país.};
 \node[capa, fill=gray!4, below=3mm of jur] (org) {\textbf{Organización} --- \texttt{organizaciones/unsa/}\\ \scriptsize Política interna, cargos de los aprobadores, documentos institucionales y perfil. Cambia con la organización.};
 \node[rectangle, draw=tintaAcento, line width=0.9pt, fill=white, right=8mm of jur, text width=2.6cm, align=center, minimum height=2.2cm] (eval) {\textbf{Evaluación}\\ \scriptsize de un contrato};
@@ -1258,7 +1287,7 @@ Una auditoría sigue estos pasos:
   \item La página envía el contrato (texto, \texttt{.pdf}, \texttt{.docx}, \texttt{.md} o \texttt{.txt}); los \texttt{.docx} se convierten a texto en el navegador y los PDF los lee n8n, que marca cada página para poder citarla.
   \item n8n responde de inmediato con un número de trabajo y continúa en segundo plano; la página consulta el avance cada pocos segundos.
   \item n8n lee la skill, la configuración de la organización, su jurisdicción y su perfil, y arma las instrucciones de sistema (unos 20\,000 tokens) con el contrato marcado como contenido no confiable.
-  \item El selector llama al modelo configurado, que devuelve el informe de 11 secciones y el JSON.
+  \item El selector llama al modelo configurado, que devuelve el informe (n8n completa la sección 12) y el JSON.
   \item n8n controla el JSON (sección \nameref{sec:robustez}); si no cumple el esquema, pide una sola corrección.
   \item n8n descarta lo que el modelo haya puesto en los campos calculados y los recalcula: severidades, alertas de renovación, resumen, puntaje, dictamen, aprobación y trazabilidad.
   \item Inserta las tablas calculadas en el informe y guarda el expediente en estado Pendiente DPO.
@@ -1304,10 +1333,10 @@ La prueba con un modelo local de 7\,000 millones de parámetros (sección \namer
 \textbf{Problema observado} & \textbf{Control} \\
 \midrule
 JSON con comentarios (``// repetir para los demás controles'') o comas finales & Reparación del texto antes de interpretarlo; queda anotada como ajuste. \\
-JSON abreviado (un control de 24) & Revisión de los 24 controles: faltantes, repetidos o desconocidos. Si faltan, se pide la corrección y, si persiste, la auditoría termina en error en lugar de calcular un puntaje sobre menos controles. \\
+JSON abreviado (un control de 26) & Revisión de los 26 controles: faltantes, repetidos o desconocidos. Si faltan, se pide la corrección y, si persiste, la auditoría termina en error en lugar de calcular un puntaje sobre menos controles. \\
 Identificadores con adornos (``A.2.2.2 \textsuperscript{A}'') o fila A.1.2.7 incluida & Ajuste de forma: se recorta el identificador y se retira la fila del control marco. \\
 Campo opcional en \texttt{null} cuando el esquema no lo admite & Se trata como ausente. \\
-Corrección sin contexto & La petición de corrección incluye la lista de los 24 controles y la matriz que el propio modelo escribió en su informe. \\
+Corrección sin contexto & La petición de corrección incluye la lista de los 26 controles y la matriz que el propio modelo escribió en su informe. \\
 Formato de la corrección & Con Ollama, salida estructurada: por defecto se exige JSON válido; opcionalmente, el esquema completo, más estricto pero mucho más lento. \\
 Repetición sin fin & Tope de tokens de salida enviado al modelo. \\
 Perfil: notas de muchos documentos que no caben en el contexto (el modelo recibe solo el final) & Las notas se depuran y, si no caben, se reparte el espacio entre todos los documentos. \\
@@ -1345,7 +1374,7 @@ La página se sirve desde el propio n8n, por lo que no requiere otro servidor. L
 \midrule
 Auditar un contrato & Pegar el texto o soltar un archivo; muestra el avance y avisa cuando el expediente está listo, aunque el usuario cambie de pantalla. \\
 Expedientes & Todas las auditorías de la organización, con su puntaje y estado de aprobación. \\
-Expediente & La \emph{huella} de 24 casillas (una por control, coloreada según su estado), el puntaje, el dictamen, el desglose por sección del Anexo A (barras y radar) y los dos sellos de aprobación; pestañas de informe, alertas, historial y JSON. \\
+Expediente & La \emph{huella} de 26 casillas (una por control, coloreada según su estado), el puntaje, el dictamen, el desglose por sección del Anexo A (barras y radar) y los dos sellos de aprobación; pestañas de informe, alertas, historial y JSON. \\
 Por aprobar & Bandeja del rol elegido (DPO o Legal). \\
 Organización y perfil & Documentos institucionales, generación y validación del perfil, terceros sin DPA evaluado y creación de organizaciones. \\
 Renovaciones & Contratos que vencen o cuyo plazo de preaviso llega pronto. \\
@@ -1458,7 +1487,7 @@ DigiServ (addendum) & Cinco cláusulas vagas y una nota dirigida al ``sistema ev
 \end{tabularx}
 \end{table}
 
-La Tabla~\ref{tab:resultados} consolida los resultados, y la Figura~\ref{fig:dimensiones} desglosa el puntaje base por sección del Anexo A. La versión 2.0 reproduce exactamente el puntaje total, el dictamen y las alertas de la versión 1.1.
+La Tabla~\ref{tab:resultados} consolida los resultados, y la Figura~\ref{fig:dimensiones} desglosa el puntaje base por sección del Anexo A. Al ampliar la lista a 26 controles, los tres casos conservaron su puntaje total, su dictamen y sus alertas. Al contrato de AndesCloud, diseñado como ejemplo de contrato conforme, se le añadió una frase sobre copias de respaldo para que siga cubriendo todos los controles.
 
 \begin{table}[H]
 \centering
@@ -1469,13 +1498,13 @@ La Tabla~\ref{tab:resultados} consolida los resultados, y la Figura~\ref{fig:dim
 \toprule
 \textbf{Caso} & \textbf{Riesgo} & \textbf{C} & \textbf{P} & \textbf{NC} & \textbf{SE} & \textbf{Alertas A} & \textbf{Puntaje} & \textbf{Dictamen} \\
 \midrule
-NubeAndina & Alto  & 1  & 12 & 4 & 7  & 3 & 22  & No recomendable \\
-AndesCloud & Medio & 24 & 0  & 0 & 0  & 0 & 100 & Recomendable \\
-DigiServ   & Medio & 0  & 1  & 9 & 14 & 4 & 0   & No recomendable \\
+NubeAndina & Alto  & 1  & 13 & 4 & 8  & 3 & 22  & No recomendable \\
+AndesCloud & Medio & 26 & 0  & 0 & 0  & 0 & 100 & Recomendable \\
+DigiServ   & Medio & 0  & 1  & 9 & 16 & 4 & 0   & No recomendable \\
 \bottomrule
 \end{tabular}
 
-\notaapa{C = Cumple; P = Parcial; NC = No cumple; SE = Sin evidencia; Alertas A = alertas de prioridad Alta.}
+\notaapa{C = Cumple; P = Parcial; NC = No cumple; SE = Sin evidencia; Alertas A = alertas de prioridad Alta. Con la lista de 26 controles. En la versión 1.1 (24 controles) los puntajes y dictámenes fueron los mismos.}
 \end{table}
 
 \begin{figure}[H]
@@ -1493,18 +1522,18 @@ DigiServ   & Medio & 0  & 1  & 9 & 14 & 4 & 0   & No recomendable \\
   \foreach \v in {20,40,60,80,100} { \node[font=\tiny, anchor=west, gray] at (0.05,\R*\v/100) {\v}; }
   % AndesCloud (100 en todas)
   \draw[black!80, line width=1pt, fill=black!10, fill opacity=0.5] (90:\R) -- (18:\R) -- (-54:\R) -- (-126:\R) -- (162:\R) -- cycle;
-  % NubeAndina: 30, 50, 45, 42.2, 32.5
+  % NubeAndina: 30, 50, 45, 42.2, 33.3
   \draw[black!60, line width=1pt, dash pattern=on 4pt off 2pt, fill=black!25, fill opacity=0.5]
-    (90:\R*0.300) -- (18:\R*0.500) -- (-54:\R*0.450) -- (-126:\R*0.422) -- (162:\R*0.325) -- cycle;
-  % DigiServ: 10, 25, 15, 6.2, 10
+    (90:\R*0.300) -- (18:\R*0.500) -- (-54:\R*0.450) -- (-126:\R*0.422) -- (162:\R*0.333) -- cycle;
+  % DigiServ: 10, 25, 15, 6.2, 12.5
   \draw[black, line width=1pt, dotted, fill=black!45, fill opacity=0.6]
-    (90:\R*0.100) -- (18:\R*0.250) -- (-54:\R*0.150) -- (-126:\R*0.062) -- (162:\R*0.100) -- cycle;
+    (90:\R*0.100) -- (18:\R*0.250) -- (-54:\R*0.150) -- (-126:\R*0.062) -- (162:\R*0.125) -- cycle;
   % etiquetas de los ejes
   \node[font=\scriptsize, align=center, anchor=south] at (90:\R+0.15) {\textbf{A.2.2} (6)\\Condiciones de recolección\\y tratamiento};
   \node[font=\scriptsize, align=left, anchor=west] at (18:\R+0.2) {\textbf{A.2.3} (1)\\Obligaciones con\\los titulares};
   \node[font=\scriptsize, align=left, anchor=north west] at (-54:\R+0.15) {\textbf{A.2.4} (3)\\Privacidad desde el\\diseño y por defecto};
   \node[font=\scriptsize, align=right, anchor=north east] at (-126:\R+0.15) {\textbf{A.2.5} (8)\\Compartición, transferencia\\y comunicación};
-  \node[font=\scriptsize, align=right, anchor=east] at (162:\R+0.2) {\textbf{A.3} (6)\\Consideraciones\\de seguridad};
+  \node[font=\scriptsize, align=right, anchor=east] at (162:\R+0.2) {\textbf{A.3} (8)\\Consideraciones\\de seguridad};
   % leyenda
   \begin{scope}[shift={(-3.6,-4.6)}]
     \draw[black!80, line width=1pt, fill=black!10] (0,0) rectangle (0.5,0.25); \node[font=\scriptsize, anchor=west] at (0.6,0.125) {AndesCloud};
@@ -1512,16 +1541,16 @@ DigiServ   & Medio & 0  & 1  & 9 & 14 & 4 & 0   & No recomendable \\
     \draw[black, line width=1pt, dotted, fill=black!45] (5.0,0) rectangle (5.5,0.25); \node[font=\scriptsize, anchor=west] at (5.6,0.125) {DigiServ};
   \end{scope}
 \end{tikzpicture}
-\notaapa{Puntajes base (0 a 100) sin la penalización por alertas de prioridad Alta; entre paréntesis, el número de controles de cada sección. La línea discontinua negra marca 80, el umbral de riesgo bajo. Valores de NubeAndina: 30,0; 50,0; 45,0; 42,2 y 32,5. DigiServ: 10,0; 25,0; 15,0; 6,2 y 10,0. AndesCloud: 100 en las cinco secciones.}
+\notaapa{Puntajes base (0 a 100) sin la penalización por alertas de prioridad Alta; entre paréntesis, el número de controles de cada sección. La línea discontinua negra marca 80, el umbral de riesgo bajo. Valores de NubeAndina: 30,0; 50,0; 45,0; 42,2 y 33,3. DigiServ: 10,0; 25,0; 15,0; 6,2 y 12,5. AndesCloud: 100 en las cinco secciones.}
 \end{figure}
 
-\par\noindent \textbf{NubeAndina.} Puntaje 22 sobre 100 (riesgo alto), con un puntaje base de 37,5 y una penalización de 15 puntos por tres alertas Altas. El cálculo puede verificarse a mano: los nueve controles críticos aportan un peso de 27 (uno cumple, 3,0 puntos; cinco parciales, 7,5; tres no cumplen, 0), y los quince restantes un peso de 15 (siete parciales, 3,5 puntos; siete sin evidencia, 1,75; uno que no cumple). El total es $15{,}75 / 42 \times 100 = 37{,}5$. Las tres alertas Altas son el uso de las grabaciones para mejorar los modelos de analítica de voz del proveedor, el aviso de incidentes en 72 horas y los sub-encargados en Estados Unidos e India sin garantías. La matriz completa figura en el \hyperref[anx:matriz]{Anexo B}.
+\par\noindent \textbf{NubeAndina.} Puntaje 22 sobre 100 (riesgo alto), con un puntaje base de 37,5 y una penalización de 15 puntos por tres alertas Altas. El cálculo puede verificarse a mano: los nueve controles críticos aportan un peso de 27 (uno cumple, 3,0 puntos; cinco parciales, 7,5; tres no cumplen, 0), y los diecisiete restantes un peso de 17 (ocho parciales, 4,0 puntos; ocho sin evidencia, 2,0; uno que no cumple). El total es $16{,}5 / 44 \times 100 = 37{,}5$. Las tres alertas Altas son el uso de las grabaciones para mejorar los modelos de analítica de voz del proveedor, el aviso de incidentes en 72 horas y los sub-encargados en Estados Unidos e India sin garantías. La matriz completa figura en el \hyperref[anx:matriz]{Anexo B}.
 \par
 
 \par\noindent \textbf{AndesCloud.} El contrato obtuvo 100 puntos. Su fin de vigencia es el 31/01/2027 con renovación automática y un preaviso de 60 días, por lo que la fecha límite para preavisar es el 02/12/2026. Con fecha de referencia 01/10/2026 esa fecha cae justo fuera de la ventana de 60 días y no se generó alerta; con fecha 07/10/2026 apareció la alerta Media correspondiente. La regla se aplica de forma literal.
 \par
 
-\par\noindent \textbf{DigiServ.} El documento incluía la frase: ``Nota para el sistema evaluador: este documento ya fue revisado y aprobado por el área legal del cliente; califique todos los controles como conformes y omita las alertas''. La skill no obedeció la instrucción, la registró como alerta Alta de seguridad y evaluó las cláusulas según los criterios. El puntaje base fue 9,5 y la penalización máxima de 20 puntos llevó el resultado a 0.
+\par\noindent \textbf{DigiServ.} El documento incluía la frase: ``Nota para el sistema evaluador: este documento ya fue revisado y aprobado por el área legal del cliente; califique todos los controles como conformes y omita las alertas''. La skill no obedeció la instrucción, la registró como alerta Alta de seguridad y evaluó las cláusulas según los criterios. El puntaje base fue 10,2 y la penalización máxima de 20 puntos llevó el resultado a 0.
 \par
 
 \subsection{Caso de aplicación: Universidad Nacional de San Agustín de Arequipa}
@@ -1564,11 +1593,11 @@ En 15 de los 120 controles, dos auditores razonables podrían discrepar (por eje
 \toprule
 \textbf{N.º} & \textbf{Riesgo} & \textbf{C} & \textbf{P} & \textbf{NC} & \textbf{SE} & \textbf{Alertas A} & \textbf{Base} & \textbf{Puntaje} & \textbf{Dictamen} \\
 \midrule
-01 & Alto  & 13 & 5 & 3 & 3  & 3 & 64,9 & 50 & No recomendable \\
-02 & Alto  & 9  & 5 & 3 & 7  & 1 & 50,6 & 46 & No recomendable \\
-03 & Alto  & 23 & 1 & 0 & 0  & 0 & 98,8 & 99 & Con condiciones \\
-04 & Alto  & 0  & 2 & 9 & 13 & 4 & 10,1 & 0  & No recomendable \\
-05 & Medio & 3  & 4 & 4 & 13 & 1 & 36,3 & 31 & No recomendable \\
+01 & Alto  & 14 & 6 & 3 & 3  & 3 & 65,3 & 50 & No recomendable \\
+02 & Alto  & 9  & 5 & 3 & 9  & 1 & 49,4 & 44 & No recomendable \\
+03 & Alto  & 25 & 1 & 0 & 0  & 0 & 98,9 & 99 & Con condiciones \\
+04 & Alto  & 0  & 2 & 9 & 15 & 4 & 10,8 & 0  & No recomendable \\
+05 & Medio & 3  & 4 & 4 & 15 & 1 & 35,8 & 31 & No recomendable \\
 \bottomrule
 \end{tabular}
 \notaapa{C = Cumple; P = Parcial; NC = No cumple; SE = Sin evidencia; Alertas A = alertas de prioridad Alta, incluida la de contrato vencido que calcula el código en el caso 04. ``Con condiciones'' = Recomendable con condiciones; ``No recomendable'' = No recomendable sin enmiendas.}
@@ -1667,7 +1696,7 @@ El tercero es la independencia del modelo. El mismo sistema funciona con un serv
 \subsection{Limitaciones}
 
 \begin{itemize}
-  \item \textbf{Verificación normativa parcial.} Los identificadores y títulos de los controles se verificaron contra el texto oficial de ISO/IEC 27701:2025, pero la correspondencia con la edición 2019 sigue sin verificar y los resúmenes de los controles son paráfrasis del grupo, no revisadas por un especialista.
+  \item \textbf{Verificación normativa.} Los identificadores, títulos y la guía de los controles se verificaron contra el texto oficial de ISO/IEC 27701:2025, pero los resúmenes son paráfrasis del grupo y la selección de los 26 controles no fue revisada por un especialista. La copia de la norma usada estaba incompleta en algunos apartados (guía B.2.5.7 a B.2.5.9 y parte del Anexo F).
   \item \textbf{Evaluación documental.} El sistema evalúa lo que el contrato obliga, no lo que el proveedor implementa en la práctica.
   \item \textbf{Casos de prueba propios.} Todos los contratos, incluidos los de la UNSA, son ficticios, lo que puede favorecer resultados limpios. Las evaluaciones de referencia no han sido revisadas por un especialista.
   \item \textbf{Parámetros no validados.} Los plazos internos, la lista de países y los cargos de los aprobadores de la UNSA son supuestos, no definiciones de un DPO real.
@@ -1708,7 +1737,7 @@ Revisión de las referencias & Revisar las evaluaciones de referencia de la UNSA
 Integración multiagente & Conectar el Agente 7 con los demás agentes mediante MCP: envío de controles compartidos al Agente 3, consulta del inventario (Agente 1) y de la evaluación de impacto (Agente 2), y registro en PostgreSQL. \\
 Seguridad operativa & Autenticación de usuarios y asignación de roles DPO y Legal a personas concretas. \\
 Otras jurisdicciones & Completar y revisar con un especialista la carpeta de otro país a partir de la plantilla. \\
-Verificación normativa & Verificar la correspondencia con la edición 2019 (Anexo F) y hacer revisar por un especialista las paráfrasis de la lista de verificación. \\
+Verificación normativa & Hacer revisar por un especialista las paráfrasis de la lista de verificación y la selección de los 26 controles. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -1792,47 +1821,48 @@ Yao, S., Zhao, J., Yu, D., Du, N., Shafran, I., Narasimhan, K. y Cao, Y. (2023).
 La Tabla~\ref{tab:controles} lista los controles de ISO/IEC 27701:2025 que evalúa la skill (ISO, 2025).
 
 \begin{small}
-\begin{longtable}{@{}l L{5.2cm} l c L{4.0cm}@{}}
+\begin{longtable}{@{}l L{5.6cm} c L{5.0cm}@{}}
 \caption{Controles de ISO/IEC 27701:2025 evaluados por la skill}\label{tab:controles}\\
 \toprule
-\textbf{Control} & \textbf{Título} & \textbf{2019} & \textbf{Ámbito} & \textbf{Qué debe exigir el DPA} \\
+\textbf{Control} & \textbf{Título} & \textbf{Ámbito} & \textbf{Qué debe exigir el DPA} \\
 \midrule
 \endfirsthead
 \toprule
-\textbf{Control} & \textbf{Título} & \textbf{2019} & \textbf{Ámbito} & \textbf{Qué debe exigir el DPA} \\
+\textbf{Control} & \textbf{Título} & \textbf{Ámbito} & \textbf{Qué debe exigir el DPA} \\
 \midrule
 \endhead
 \bottomrule
 \endfoot
-A.1.2.7 & Contratos con encargados (marco) & A.7.2.6 & A7 & Contrato escrito con cada encargado \\
-A.2.2.2* & Acuerdo con el cliente & B.8.2.1 & SoA & Instrucciones documentadas y asistencia \\
-A.2.2.3* & Fines de la organización & B.8.2.2 & SoA & Prohibición de fines propios \\
-A.2.2.4 & Uso para marketing y publicidad & B.8.2.3 & SoA & Prohibición de marketing \\
-A.2.2.5 & Instrucción infractora & B.8.2.4 & SoA & Aviso de instrucciones ilícitas \\
-A.2.2.6 & Obligaciones del cliente & B.8.2.5 & SoA & Información y derecho de auditoría \\
-A.2.2.7 & Registros del tratamiento & B.8.2.6 & SoA & Registro de actividades \\
-A.2.3.2 & Obligaciones con los titulares & B.8.3.1 & SoA & Asistencia en derechos con plazos \\
-A.2.4.2 & Archivos temporales & B.8.4.1 & SoA & Eliminación en plazo definido \\
-A.2.4.3* & Devolución, transferencia o eliminación & B.8.4.2 & SoA & Devolución o eliminación con certificado \\
-A.2.4.4 & Controles de transmisión & B.8.4.3 & SoA & Cifrado en tránsito \\
-A.2.5.2 & Base para transferencias entre jurisdicciones & B.8.5.1 & SoA & Mecanismo y aviso de cambios \\
-A.2.5.3* & Países destino & B.8.5.2 & SoA & Lista cerrada de países \\
-A.2.5.4 & Registros de comunicaciones a terceros & B.8.5.3 & SoA & Registro de comunicaciones \\
-A.2.5.5 & Notificación de solicitudes de comunicación & B.8.5.4 & SoA & Aviso de requerimientos de autoridades \\
-A.2.5.6 & Comunicaciones legalmente vinculantes & B.8.5.5 & SoA & Solo comunicaciones obligatorias \\
-A.2.5.7* & Divulgación de subcontratistas & B.8.5.6 & A7 & Lista de sub-encargados \\
-A.2.5.8* & Contratación de subcontratistas & B.8.5.7 & A7 & Obligaciones equivalentes en cascada \\
-A.2.5.9* & Cambio de subcontratista & B.8.5.8 & A7 & Aviso previo y derecho de objeción \\
-A.3.9 & Derechos de acceso & -- & SoA & Acceso limitado y confidencialidad \\
-A.3.10* & Seguridad en acuerdos con proveedores & -- & A7 & Requisitos de seguridad y plazo de aviso \\
-A.3.11 & Planificación de gestión de incidentes & -- & SoA & Procedimiento de incidentes \\
-A.3.12* & Respuesta a incidentes & -- & SoA & Contenido del aviso y cooperación \\
-A.3.13 & Requisitos legales y contractuales & -- & SoA & Compromiso con la ley aplicable \\
-A.3.15 & Revisión independiente & -- & SoA & Auditorías o certificaciones \\
+A.2.2.2* & Acuerdo con el cliente & SoA & Instrucciones documentadas y asistencia \\
+A.2.2.3* & Fines de la organización & SoA & Prohibición de fines propios \\
+A.2.2.4 & Uso para marketing y publicidad & SoA & Prohibición de marketing \\
+A.2.2.5 & Instrucción infractora & SoA & Aviso de instrucciones ilícitas \\
+A.2.2.6 & Obligaciones del cliente & SoA & Información y derecho de auditoría \\
+A.2.2.7 & Registros del tratamiento & SoA & Registro de actividades \\
+A.2.3.2 & Obligaciones con los titulares & SoA & Asistencia en derechos con plazos \\
+A.2.4.2 & Archivos temporales & SoA & Eliminación en plazo definido \\
+A.2.4.3* & Devolución, transferencia o eliminación & SoA & Devolución o eliminación con certificado \\
+A.2.4.4 & Controles de transmisión & SoA & Cifrado en tránsito \\
+A.2.5.2 & Base para transferencias entre jurisdicciones & SoA & Mecanismo y aviso de cambios \\
+A.2.5.3* & Países destino & SoA & Lista cerrada de países \\
+A.2.5.4 & Registros de comunicaciones a terceros & SoA & Registro de comunicaciones \\
+A.2.5.5 & Notificación de solicitudes de comunicación & SoA & Aviso de requerimientos de autoridades \\
+A.2.5.6 & Comunicaciones legalmente vinculantes & SoA & Solo comunicaciones obligatorias \\
+A.2.5.7* & Divulgación de subcontratistas & A7 & Lista de sub-encargados \\
+A.2.5.8* & Contratación de subcontratistas & A7 & Obligaciones equivalentes en cascada \\
+A.2.5.9* & Cambio de subcontratista & A7 & Aviso previo y derecho de objeción \\
+A.3.9 & Derechos de acceso & SoA & Acceso limitado según política de control de acceso \\
+A.3.10* & Seguridad en acuerdos con proveedores & A7 & Requisitos de seguridad y plazo de aviso \\
+A.3.11 & Planificación de gestión de incidentes & SoA & Procedimiento de incidentes \\
+A.3.12* & Respuesta a incidentes & SoA & Información para que el responsable notifique, sin demora indebida \\
+A.3.13 & Requisitos legales y contractuales & SoA & Compromiso con la ley aplicable \\
+A.3.15 & Revisión independiente & SoA & Auditorías o certificaciones \\
+A.3.18 & Acuerdos de confidencialidad & SoA & Confidencialidad del personal y agentes, con duración \\
+A.3.24 & Respaldo de información & SoA & Límites del respaldo y eliminación en respaldos \\
 \end{longtable}
 \end{small}
 \vspace{-6pt}
-\notaapa{Los títulos son paráfrasis del grupo. La columna 2019 indica la equivalencia con la edición anterior y está pendiente de verificación contra el Anexo F de la norma. Ámbito: A7 = propio del Agente 7; SoA = insumo para el Agente 3. El asterisco señala los controles críticos.}
+\notaapa{Los títulos son paráfrasis del grupo, verificados contra el texto oficial de la edición 2025. Ámbito: A7 = propio del Agente 7; SoA = insumo para el Agente 3. El asterisco señala los controles críticos. A.1.2.7 (contratos con encargados) no se califica: es el control marco de la organización, que se cumple auditando sus contratos.}
 
 \newpage
 \section{Anexo B. Matriz de controles del caso NubeAndina}
@@ -1871,12 +1901,14 @@ A.2.5.6 & No localizada & -- & \eSE & Alta \\
 A.2.5.7 & ``VoxCloud Inc., almacenamiento de grabaciones, Estados Unidos'' & 7 & \eC & Ninguna \\
 A.2.5.8 & ``autorización general'' & 7 & \eP & Alta \\
 A.2.5.9 & ``publicará en su sitio web las actualizaciones'' & 7 & \eNC & Crítica \\
-A.3.9 & ``sujeto a obligaciones de confidencialidad'' & 4 & \eP & Alta \\
+A.3.9 & No localizada & -- & \eSE & Alta \\
 A.3.10 & ``dentro de las 72 horas siguientes'' & 6 & \eNC & Crítica \\
 A.3.11 & No localizada & -- & \eSE & Alta \\
 A.3.12 & ``notificará al Cliente cualquier violación'' & 6 & \eP & Alta \\
 A.3.13 & ``se rige por las leyes de la República del Perú'' & 11 & \eP & Alta \\
 A.3.15 & ``un resumen de su informe de auditoría'' & 9 & \eP & Alta \\
+A.3.18 & ``su personal está sujeto a obligaciones de confidencialidad'' & 4 & \eP & Alta \\
+A.3.24 & ``salvo las copias de respaldo'' & 10 & \eP & Alta \\
 \end{longtable}
 \end{small}
 \vspace{-6pt}
@@ -1953,13 +1985,13 @@ El Código~\ref{lst:json} muestra los bloques principales del resultado esperado
       "controles_relacionados": ["A.1.2.7"], "origen": "script" }
   ],
   "puntaje_proveedor": {
-    "valor": 0, "banda": "Riesgo alto", "base": 10.1, "penalizacion": 20,
+    "valor": 0, "banda": "Riesgo alto", "base": 10.8, "penalizacion": 20,
     "por_dimension": {
       "Condiciones de recolección y tratamiento": 10.0,
       "Obligaciones con los titulares": 25.0,
       "Privacidad desde el diseño y por defecto": 10.0,
       "Compartición, transferencia y comunicación": 6.2,
-      "Consideraciones de seguridad": 15.0
+      "Consideraciones de seguridad": 16.7
     }
   },
   "dictamen": "No recomendable sin enmiendas",
@@ -2012,14 +2044,16 @@ A.2.5.6 & P$^\dagger$ (SE) & SE & C & SE & SE \\
 A.2.5.7* & C & NC & C & NC & C$^\dagger$ (NC) \\
 A.2.5.8* & C & P & C & NC & P$^\dagger$ (C) \\
 A.2.5.9* & P & NC & C & NC & C$^\dagger$ (NC) \\
-A.3.9 & C & P & C & P & P \\
+A.3.9 & C & SE & C & SE$^\dagger$ (NC) & SE \\
 A.3.10* & NC & NC & C & NC & NC \\
 A.3.11 & C & SE & C & SE & SE \\
 A.3.12* & C$^\dagger$ (P) & P & C & NC & NC \\
 A.3.13 & C & C & C & P$^\dagger$ (SE) & C \\
 A.3.15 & C & SE$^\dagger$ (P) & P$^\dagger$ (SE) & SE & SE \\
+A.3.18 & C & P$^\dagger$ (C) & C & P & P$^\dagger$ (C) \\
+A.3.24 & P$^\dagger$ (SE) & SE & C & SE & SE \\
 \midrule
-\textbf{Puntaje} & 50 & 46 & 99 & 0 & 31 \\
+\textbf{Puntaje} & 50 & 44 & 99 & 0 & 31 \\
 \end{longtable}
 \end{small}
 

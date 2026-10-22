@@ -78,11 +78,11 @@ def main():
             pg.wait_for_selector(".huella .casilla", timeout=20000)
             n = pg.eval_on_selector_all(".huella .casilla", "els => els.length")
             valor = pg.inner_text(".cifra .v")
-            assert n == 24 and valor.startswith("22"), (n, valor)
+            assert n == 26 and valor.startswith("22"), (n, valor)
             pg.wait_for_selector(".informe h2")
             pg.screenshot(path=str(cap / "03_expediente.png"), full_page=True)
             estado["vista"] = pg.inner_text("main h1")
-            return f"24 casillas · puntaje {valor.splitlines()[0]}"
+            return f"26 casillas · puntaje {valor.splitlines()[0]}"
         paso("Auditar pegando el texto → progreso → expediente con huella y 22/100", auditar_texto)
 
         def aprobar():

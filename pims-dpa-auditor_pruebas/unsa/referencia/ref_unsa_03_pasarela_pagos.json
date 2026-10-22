@@ -347,6 +347,30 @@
       "_alternativas": [
         "Sin evidencia"
       ]
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "11",
+      "evidencia": "con confidencialidad que subsiste tras la relación",
+      "estado": "Cumple",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "",
+      "_alternativas": []
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "6",
+      "evidencia": "Respaldos diarios cifrados, conservados 30 días, con restauración en máximo 24 horas",
+      "estado": "Cumple",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "",
+      "_alternativas": []
     }
   ],
   "alertas": [

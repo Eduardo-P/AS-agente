@@ -109,7 +109,7 @@ def responder(system, usuario):
             return f"{informe(nombre)}\n\n```json\n{j}\n```"
         if "MOCK:SIN_CONTROLES" in usuario:      # como qwen2.5:7b en el caso UNSA 03: "controles": [ // ... ]
             r["controles"] = []
-            j = json.dumps(r, ensure_ascii=False, indent=2).replace('"controles": []', '"controles": [\n    // ... (repetir para los 24 controles)\n  ]')
+            j = json.dumps(r, ensure_ascii=False, indent=2).replace('"controles": []', '"controles": [\n    // ... (repetir para los 26 controles)\n  ]')
             return f"{informe(nombre)}\n\n```json\n{j}\n```"
         if "MOCK:IDS_ADORNADOS" in usuario:       # como qwen2.5:7b: "A.2.2.2 🅰", fila A.1.2.7 y null en un opcional
             r["controles"] = [dict(r["controles"][0], control="A.1.2.7 🅰")] + [dict(c, control=c["control"] + " 🅰") for c in r["controles"]]

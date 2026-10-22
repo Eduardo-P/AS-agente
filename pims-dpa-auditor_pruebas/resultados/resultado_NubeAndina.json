@@ -298,12 +298,13 @@
     {
       "control": "A.3.9",
       "titulo": "Derechos de acceso",
-      "clausula_dpa": "4",
-      "evidencia": "su personal está sujeto a obligaciones de confidencialidad",
-      "estado": "Parcial",
+      "clausula_dpa": "No localizada",
+      "evidencia": "",
+      "estado": "Sin evidencia",
       "fuente_requisito": "ISO 27701",
       "ambito": "Insumo SoA (Agente 3)",
-      "severidad": "Alta"
+      "severidad": "Alta",
+      "observacion": "Sin limitación del acceso a los datos (la confidencialidad del personal se evalúa en A.3.18)."
     },
     {
       "control": "A.3.10",
@@ -354,6 +355,28 @@
       "fuente_requisito": "ISO 27701",
       "ambito": "Insumo SoA (Agente 3)",
       "severidad": "Alta"
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "clausula_dpa": "4",
+      "evidencia": "su personal está sujeto a obligaciones de confidencialidad",
+      "estado": "Parcial",
+      "fuente_requisito": "ISO 27701",
+      "ambito": "Insumo SoA (Agente 3)",
+      "severidad": "Alta",
+      "observacion": "Sin duración de la obligación ni alcance a agentes y sub-encargados."
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "clausula_dpa": "10",
+      "evidencia": "salvo las copias de respaldo, que se eliminarán conforme a sus ciclos ordinarios de retención",
+      "estado": "Parcial",
+      "fuente_requisito": "ISO 27701",
+      "ambito": "Insumo SoA (Agente 3)",
+      "severidad": "Alta",
+      "observacion": "Excluye los respaldos de la eliminación al término, sin plazo ni límites del servicio de respaldo."
     }
   ],
   "alertas": [
@@ -419,9 +442,9 @@
   "dictamen": "No recomendable sin enmiendas",
   "resumen": {
     "cumple": 1,
-    "parcial": 12,
+    "parcial": 13,
     "no_cumple": 4,
-    "sin_evidencia": 7,
+    "sin_evidencia": 8,
     "no_aplica": 0,
     "alertas_altas": 3
   },
@@ -435,7 +458,7 @@
       "Obligaciones con los titulares": 50.0,
       "Privacidad desde el diseño y por defecto": 45.0,
       "Compartición, transferencia y comunicación": 42.2,
-      "Consideraciones de seguridad": 32.5
+      "Consideraciones de seguridad": 33.3
     }
   },
   "remediacion": [

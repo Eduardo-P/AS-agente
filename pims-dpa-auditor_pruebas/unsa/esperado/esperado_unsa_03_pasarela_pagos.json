@@ -32,7 +32,7 @@
   "contrato": {
     "id_contrato": null,
     "version_documento": null,
-    "hash_documento_sha256": "52197cbfb2a24806cc69ae78c5af01fae6325c07360a575e91c90485123b815b",
+    "hash_documento_sha256": "8da7c189fd905fe17528775518f2eacf9449909a35b685bf740ed2fa6f012d9b",
     "estado_dpa": "Pendiente DPO",
     "fecha_firma": "2026-02-20",
     "fecha_vigencia_inicio": "2026-03-01",
@@ -347,6 +347,30 @@
       "_alternativas": [
         "Sin evidencia"
       ]
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "11",
+      "evidencia": "con confidencialidad que subsiste tras la relación",
+      "estado": "Cumple",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "",
+      "_alternativas": []
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "6",
+      "evidencia": "Respaldos diarios cifrados, conservados 30 días, con restauración en máximo 24 horas",
+      "estado": "Cumple",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "",
+      "_alternativas": []
     }
   ],
   "alertas": [
@@ -423,7 +447,7 @@
     "advertencias": []
   },
   "resumen": {
-    "cumple": 23,
+    "cumple": 25,
     "parcial": 1,
     "no_cumple": 0,
     "sin_evidencia": 0,
@@ -433,14 +457,14 @@
   "puntaje_proveedor": {
     "valor": 99,
     "banda": "Riesgo bajo",
-    "base": 98.8,
+    "base": 98.9,
     "penalizacion": 0,
     "por_dimension": {
       "Condiciones de recolección y tratamiento": 100.0,
       "Obligaciones con los titulares": 100.0,
       "Privacidad desde el diseño y por defecto": 100.0,
       "Compartición, transferencia y comunicación": 100.0,
-      "Consideraciones de seguridad": 95.0
+      "Consideraciones de seguridad": 95.8
     }
   },
   "dictamen": "Recomendable con condiciones",

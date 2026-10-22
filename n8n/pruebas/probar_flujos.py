@@ -170,6 +170,8 @@ def main():
             assert list(r["puntaje_proveedor"]["por_dimension"])[0] == "Condiciones de recolección y tratamiento"
             assert len(r["puntaje_proveedor"]["por_dimension"]) == 5, "el desglose debe tener las 5 secciones del Anexo A"
             assert "<svg" in d["informe"] and "A.2.3 · 50" in d["informe"], "falta el radar en la sección 7 del informe"
+            assert "## 12. Cláusulas de la norma aplicadas" in d["informe"] and "6.1.3 e)" in d["informe"], "falta la sección 12 (cláusulas 4 a 10)"
+            assert len(r["controles"]) == 26 and {"A.3.18", "A.3.24"} <= {c["control"] for c in r["controles"]}
             reg[prov] = t["id_registro"]
             return f"{t['puntaje']}/100 · {t['dictamen']}"
 
@@ -207,13 +209,13 @@ def main():
             assert ultimo.get("formato") == "json", f"la corrección con Ollama no pidió JSON ({ultimo.get('formato')})"
         return "reintentos = 1; corrección con format=json"
 
-    @prueba("JSON abreviado con comentarios (1 de 24 controles) → se repara, se detecta y se corrige → 22/100")
+    @prueba("JSON abreviado con comentarios (1 de 26 controles) → se repara, se detecta y se corrige → 22/100")
     def _():
         t = auditar("inversiones_altiplano", contrato["NubeAndina"] + "\nMOCK:JSON_ABREVIADO", "NubeAndina")
         assert t["estado"] == "terminado" and t["puntaje"] == 22, t
         if A.log:
             ultimo = [json.loads(l) for l in open(A.log, encoding="utf-8")][-1]
-            assert "faltan 23 de 24" in ultimo["usuario"], "la corrección no indicó los controles faltantes"
+            assert "faltan 25 de 26" in ultimo["usuario"], "la corrección no indicó los controles faltantes"
             assert "Tu matriz de controles del informe" in ultimo["usuario"], "la corrección no incluyó la matriz del informe"
             assert ultimo.get("formato") == "json"
         configurar(formato_correccion="esquema")
@@ -222,18 +224,18 @@ def main():
         assert t2["estado"] == "terminado" and t2["puntaje"] == 22, t2
         if A.log:
             assert [json.loads(l) for l in open(A.log, encoding="utf-8")][-1].get("formato") == "esquema"
-        return "faltan 23 de 24 → corrección con la matriz; format=json y, configurado, el esquema completo"
+        return "faltan 25 de 26 → corrección con la matriz; format=json y, configurado, el esquema completo"
 
     @prueba("JSON con 'controles' vacío (solo un comentario) → se detecta y se corrige; nunca un 0/100 sin controles")
     def _():
         t = auditar("inversiones_altiplano", contrato["NubeAndina"] + "\nMOCK:SIN_CONTROLES", "NubeAndina")
         assert t["estado"] == "terminado" and t["puntaje"] == 22, t
         _, d = http("GET", f"pims/registro/detalle?id={t['id_registro']}")
-        assert d["resultado"]["_registro"]["reintentos"] == 1 and len(d["resultado"]["controles"]) == 24, d["resultado"]["_registro"]
+        assert d["resultado"]["_registro"]["reintentos"] == 1 and len(d["resultado"]["controles"]) == 26, d["resultado"]["_registro"]
         u = [json.loads(l) for l in open(A.log, encoding="utf-8")][-1] if A.log else None
         if u:
             assert "la lista está vacía" in u["usuario"], "la corrección no explicó el error"
-        return "lista vacía → corrección → 24 controles, 22/100"
+        return "lista vacía → corrección → 26 controles, 22/100"
 
     @prueba("Identificadores con adornos, fila A.1.2.7 y null opcional → ajustes de forma sin corrección → 22/100")
     def _():
@@ -339,7 +341,7 @@ def main():
         assert t["estado"] == "terminado" and "Respuesta simulada (expediente)" in t["respuesta_chat"], t
         import re
         n = int(re.search(r"Controles en el contexto: (\d+)", t["respuesta_chat"]).group(1))
-        assert n >= 24, f"el contexto solo tenía {n} controles"
+        assert n >= 26, f"el contexto solo tenía {n} controles"
         u = ultimo_pedido()
         if u:
             assert "Eres el asistente del Agente 7" in u["system"] and "CONTENIDO NO CONFIABLE" in u["system"]

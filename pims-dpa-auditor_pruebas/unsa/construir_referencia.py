@@ -34,7 +34,8 @@ TITULOS = {'A.2.2.2': 'Acuerdo con el cliente', 'A.2.2.3': 'Fines de la organiza
            'A.2.5.6': 'Comunicaciones legalmente vinculantes', 'A.2.5.7': 'Divulgación de subcontratistas',
            'A.2.5.8': 'Contratación de subcontratistas', 'A.2.5.9': 'Cambio de subcontratista', 'A.3.9': 'Derechos de acceso',
            'A.3.10': 'Seguridad en acuerdos con proveedores', 'A.3.11': 'Planificación de incidentes',
-           'A.3.12': 'Respuesta a incidentes', 'A.3.13': 'Requisitos legales', 'A.3.15': 'Revisión independiente'}
+           'A.3.12': 'Respuesta a incidentes', 'A.3.13': 'Requisitos legales', 'A.3.15': 'Revisión independiente',
+           'A.3.18': 'Acuerdos de confidencialidad', 'A.3.24': 'Respaldo de información'}
 C, P, NC, SE = "Cumple", "Parcial", "No cumple", "Sin evidencia"
 ISO, MIX = "ISO 27701", "Mixta"
 NL = "No localizada"
@@ -90,6 +91,8 @@ CASOS = {
                           "Contenido mínimo y cooperación completos; el plazo se evalúa en A.3.10.", alt=[P]),
             "A.3.13": ctl(C, "14", "se obliga a cumplir la Ley N.° 29733, Ley de Protección de Datos Personales, y su Reglamento", MIX),
             "A.3.15": ctl(C, "4", "certificado ISO/IEC 27001:2022 vigente hasta el 31 de agosto de 2027"),
+            "A.3.18": ctl(C, "12", "sujeto a obligaciones de confidencialidad que subsisten después de terminado el contrato"),
+            "A.3.24": ctl(P, "8", "incluidas las copias de respaldo, dentro de los 60 días siguientes", obs="Elimina los respaldos al término, pero no informa los límites del servicio de respaldo ni la restauración.", alt=[SE]),
         },
         "alertas": [
             ("Alta", "Riesgo", "Uso de registros de actividad para entrenar modelos de IA ofrecidos a otros clientes (fines propios).", ["A.2.2.3"]),
@@ -130,12 +133,14 @@ CASOS = {
             "A.2.5.7": ctl(NC, "9", "laboratorios de referencia nacionales cuando el análisis lo requiera", obs="Sin lista de sub-encargados (nombre, servicio, país)."),
             "A.2.5.8": ctl(P, "9", "los que guardarán confidencialidad sobre la información recibida", obs="Autorización general; solo confidencialidad, sin obligaciones equivalentes por escrito."),
             "A.2.5.9": ctl(NC, "9", obs="Sin aviso previo de cambios ni derecho de objeción."),
-            "A.3.9": ctl(P, "10", "El personal del Laboratorio está sujeto al secreto profesional", obs="Confidencialidad sí; limitación de acceso no."),
+            "A.3.9": ctl(SE, obs="Sin limitación del acceso a los datos (la confidencialidad del personal se evalúa en A.3.18)."),
             "A.3.10": ctl(NC, "11", "dentro de las 48 horas de conocido", MIX, "48 h superan el máximo interno de 24 h."),
             "A.3.11": ctl(SE),
             "A.3.12": ctl(P, "11", "notificará a la UNSA cualquier incidente que comprometa datos de pacientes", MIX, "Sin contenido mínimo del aviso ni cooperación."),
             "A.3.13": ctl(C, "12", "se rige por la Ley N.° 29733 y su Reglamento", MIX),
             "A.3.15": ctl(SE, "4", "declara contar con acreditación ISO 15189", obs="Acreditación no reconocida y sin evidencia; no hay informe independiente.", alt=[P]),
+            "A.3.18": ctl(P, "10", "El personal del Laboratorio está sujeto al secreto profesional", obs="Secreto profesional del personal y confidencialidad de los laboratorios de referencia; sin duración ni deber de cumplir las políticas de protección de datos.", alt=[C]),
+            "A.3.24": ctl(SE, obs="Sin condiciones de respaldo ni de eliminación de datos en respaldos."),
         },
         "alertas": [
             ("Alta", "Seguridad", "Aviso de incidentes en 48 h, mayor al máximo interno de 24 h; datos de salud.", ["A.3.10", "A.3.12"]),
@@ -181,6 +186,8 @@ CASOS = {
             "A.3.13": ctl(C, "13", "Cumplirá la Ley N.° 29733 y su Reglamento (D.S. 016-2024-JUS)", MIX),
             "A.3.15": ctl(P, "4", "corresponde al período cerrado el 31 de marzo de 2025", MIX,
                           "Informe SOC 2 Tipo II con más de 12 meses: vencido según la política interna.", alt=[SE]),
+            "A.3.18": ctl(C, "11", "con confidencialidad que subsiste tras la relación"),
+            "A.3.24": ctl(C, "6", "Respaldos diarios cifrados, conservados 30 días, con restauración en máximo 24 horas"),
         },
         "alertas": [
             ("Media", "Renovación", "Informe SOC 2 Tipo II con antigüedad mayor a 12 meses (período cerrado el 31/03/2025).", ["A.3.15"]),
@@ -218,13 +225,15 @@ CASOS = {
             "A.2.5.7": ctl(NC, "Sexta", "podrá subcontratar el mantenimiento de los equipos", obs="Sin lista de sub-encargados."),
             "A.2.5.8": ctl(NC, "Sexta", "podrá subcontratar el mantenimiento de los equipos", obs="Autorización general sin condiciones ni obligaciones equivalentes."),
             "A.2.5.9": ctl(NC, obs="Sin aviso de cambios."),
-            "A.3.9": ctl(P, "Quinta", "guardará reserva sobre lo observado en el ejercicio de sus funciones", obs="Reserva sí; limitación de acceso no."),
+            "A.3.9": ctl(SE, obs="Acceso remoto amplio a cámaras y grabaciones (cláusula cuarta) sin reglas de control de acceso.", alt=[NC]),
             "A.3.10": ctl(NC, obs="Sin requisitos de seguridad ni aviso de incidentes."),
             "A.3.11": ctl(SE),
             "A.3.12": ctl(NC, obs="Sin aviso ni contenido mínimo."),
             "A.3.13": ctl(P, "Octava", "se rige por la normativa de contrataciones del Estado", MIX,
                           "Identifica normativa aplicable, pero no la de protección de datos.", alt=[SE]),
             "A.3.15": ctl(SE),
+            "A.3.18": ctl(P, "Quinta", "guardará reserva sobre lo observado en el ejercicio de sus funciones", obs="Reserva limitada a lo observado, sin duración ni alcance a los datos y grabaciones."),
+            "A.3.24": ctl(SE, obs="Conserva grabaciones 180 días, pero no hay condiciones de respaldo ni de su eliminación."),
         },
         "alertas": [
             ("Alta", "Riesgo", "El proveedor puede usar las grabaciones (biométricas) para mejorar sus algoritmos: fines propios.", ["A.2.2.3"]),
@@ -269,12 +278,14 @@ CASOS = {
                            obs="Autorización específica, pero sin obligaciones equivalentes por escrito.", alt=[C]),
             "A.2.5.9": ctl(C, "undécima", "sin autorización previa y escrita de la Entidad",
                            obs="Todo cambio requiere autorización previa.", alt=[NC]),
-            "A.3.9": ctl(P, "octava", "guardar reserva absoluta sobre la información a la que tenga acceso", obs="Confidencialidad sí; limitación de acceso no."),
+            "A.3.9": ctl(SE, obs="Acceso remoto a producción sin reglas de control de acceso (la reserva se evalúa en A.3.18)."),
             "A.3.10": ctl(NC, obs="Sin requisitos de seguridad ni aviso de incidentes."),
             "A.3.11": ctl(SE),
             "A.3.12": ctl(NC),
             "A.3.13": ctl(C, "décima", "cumplirá lo dispuesto en la Ley N.° 29733, Ley de Protección de Datos Personales", MIX),
             "A.3.15": ctl(SE),
+            "A.3.18": ctl(P, "octava", "guardar reserva absoluta sobre la información a la que tenga acceso", obs="Obliga al Contratista, no se extiende expresamente a su personal.", alt=[C]),
+            "A.3.24": ctl(SE, obs="Sin condiciones de respaldo pese al acceso a bases de datos de producción."),
         },
         "alertas": [
             ("Alta", "Seguridad", "Sin obligación de aviso de incidentes, con acceso remoto a bases de datos de producción.", ["A.3.10", "A.3.12"]),

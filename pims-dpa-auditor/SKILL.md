@@ -43,6 +43,24 @@ Cada control de la matriz lleva un campo **ámbito**:
 - **Propio Agente 7:** A.1.2.7 (marco), A.2.5.7, A.2.5.8, A.2.5.9, A.3.10. Estos los decide este agente.
 - **Insumo SoA (Agente 3):** el resto de controles A.2 y A.3. Se evalúan porque están en el contrato, pero el Agente 3 consolida su estado en la SoA. Indícalo en el informe.
 
+## Cláusulas de la norma en el proceso
+
+Las cláusulas 4 a 10 de ISO/IEC 27701:2025 obligan a la organización, no al proveedor: un contrato no puede demostrarlas, así que **no se califican**. El agente las aplica en su proceso:
+
+| Cláusula | Cómo se aplica |
+|---|---|
+| 4.1 Rol | Paso 1: rol del proveedor en este tratamiento (puede variar por tratamiento). |
+| 4.2 "Cliente" según el rol | Para un sub-encargado, el "cliente" es el encargado principal: los A.2.5.x se leen en cascada. |
+| 6.1.2 y 8.2 Riesgos | El nivel de riesgo PII y las alertas son insumo de la evaluación de riesgos de privacidad; un proveedor nuevo, una transferencia o un sub-encargado nuevo, o riesgo Alto, piden reevaluarla. |
+| 6.1.3 e) Aplicabilidad | "No aplica" solo con justificación; los controles de insumo van a la SoA (Agente 3). |
+| 7.4 Comunicación | Borrador de correo al proveedor (Paso 7). |
+| 7.5 Información documentada | Expediente con versiones, hash del contrato y trazabilidad. |
+| 8.1 Procesos externos | La auditoría y la doble aprobación son el control del proveedor como proceso externo. |
+| 9.1 Seguimiento | Alertas de vencimiento y renovación. |
+| 10.2 No conformidades | Cada 🔴 o 🟡 lleva su acción correctiva en el plan de remediación. |
+
+En n8n, la sección 12 del informe la escribe el sistema con estos datos.
+
 ## Entradas
 
 - **Obligatoria:** texto del DPA o contrato. Si es PDF/DOCX y no está en contexto, léelo primero.
@@ -129,6 +147,8 @@ Para cada control 🟡, 🔴 o ⚪: acción, cláusula de enmienda (basada en la
 ## 10. Aprobaciones requeridas (DPO → Legal)
 (Usa los nombres de `aprobadores_cargos` de la configuración)
 ## 11. Supuestos, limitaciones y trazabilidad
+## 12. Cláusulas de la norma aplicadas
+(Tabla de la sección "Cláusulas de la norma en el proceso" con los datos de este expediente)
 ```
 
 4. Entrega el JSON en bloque de código aparte o como archivo `.json`.

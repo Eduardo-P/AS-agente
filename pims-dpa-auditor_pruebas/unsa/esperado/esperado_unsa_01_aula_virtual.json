@@ -359,6 +359,32 @@
       "fuente_requisito": "ISO 27701",
       "observacion": "",
       "_alternativas": []
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "12",
+      "evidencia": "sujeto a obligaciones de confidencialidad que subsisten después de terminado el contrato",
+      "estado": "Cumple",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "",
+      "_alternativas": []
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "8",
+      "evidencia": "incluidas las copias de respaldo, dentro de los 60 días siguientes",
+      "estado": "Parcial",
+      "severidad": "Alta",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Elimina los respaldos al término, pero no informa los límites del servicio de respaldo ni la restauración.",
+      "_alternativas": [
+        "Sin evidencia"
+      ]
     }
   ],
   "alertas": [
@@ -466,6 +492,12 @@
       "accion": "Enmendar: 72 h superan el máximo interno de 24 h (la UNSA debe notificar a la ANPD en 48 h).",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Alta"
+    },
+    {
+      "control": "A.3.24",
+      "accion": "Enmendar: Elimina los respaldos al término, pero no informa los límites del servicio de respaldo ni la restauración.",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
     }
   ],
   "supuestos": [
@@ -514,8 +546,8 @@
     "advertencias": []
   },
   "resumen": {
-    "cumple": 13,
-    "parcial": 5,
+    "cumple": 14,
+    "parcial": 6,
     "no_cumple": 3,
     "sin_evidencia": 3,
     "no_aplica": 0,
@@ -524,14 +556,14 @@
   "puntaje_proveedor": {
     "valor": 50,
     "banda": "Riesgo medio",
-    "base": 64.9,
+    "base": 65.3,
     "penalizacion": 15,
     "por_dimension": {
       "Condiciones de recolección y tratamiento": 62.5,
       "Obligaciones con los titulares": 50.0,
       "Privacidad desde el diseño y por defecto": 55.0,
       "Compartición, transferencia y comunicación": 67.2,
-      "Consideraciones de seguridad": 70.0
+      "Consideraciones de seguridad": 70.8
     }
   },
   "dictamen": "No recomendable sin enmiendas",

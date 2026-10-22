@@ -363,7 +363,7 @@ async function auditar() {
             fijarMeta({ modelo: modeloUsado });
           } else if (sobre.subtype === 'thinking_tokens') {
             tokensRazonamiento = sobre.estimated_tokens || tokensRazonamiento;
-            fijarEstadoCarga('Analizando los 24 controles ISO/IEC 27701...');
+            fijarEstadoCarga('Analizando los 26 controles ISO/IEC 27701...');
             fijarMeta({ modelo: modeloUsado, tokensRazonamiento });
           }
           continue;
@@ -409,7 +409,7 @@ async function auditar() {
           case 'content_block_start':
             tiposBloque[ev.index] = ev.content_block && ev.content_block.type;
             if (tiposBloque[ev.index] === 'thinking') {
-              fijarEstadoCarga('Analizando los 24 controles ISO/IEC 27701...');
+              fijarEstadoCarga('Analizando los 26 controles ISO/IEC 27701...');
             } else if (tiposBloque[ev.index] === 'text') {
               fijarEstadoCarga('Redactando el informe de 11 secciones...');
             }

@@ -39,9 +39,9 @@ const PIMS_PROMPTS = (() => {
       '  de las secciones 1, 6, 7, 10 y 11. No inventes puntajes.',
       '- No incluyas alertas de renovación o vencimiento en el JSON (n8n las calcula con la fecha de referencia). Sí incluye las de riesgo (origen "modelo").',
       '- No puedes calcular hashes: deja `contrato.hash_documento_sha256` en `null`.',
-      '- Entrega primero el **informe en Markdown** con las 11 secciones exactas y, al final, el **JSON** del registro en un único bloque ```json.',
-      '- El JSON debe cumplir `assets/esquema_salida.json` en los campos que te corresponden (incluye `controles` con los 24 controles y `trazabilidad` con `version_skill: "2.0"`, `version_config`, `evaluador` y `calculo: "script"`).',
-      `- \`controles\` lleva **un objeto por cada uno** de estos 24 controles, sin omitir ninguno: ${CONTROLES_24.join(', ')}.`,
+      '- Entrega primero el **informe en Markdown** con las 12 secciones exactas (la 12 solo con su título: la completa n8n) y, al final, el **JSON** del registro en un único bloque ```json.',
+      `- El JSON debe cumplir \`assets/esquema_salida.json\` en los campos que te corresponden (incluye \`controles\` con los ${N} controles y \`trazabilidad\` con \`version_skill: "2.0"\`, \`version_config\`, \`evaluador\` y \`calculo: "script"\`).`,
+      `- \`controles\` lleva **un objeto por cada uno** de estos ${N} controles, sin omitir ninguno: ${CONTROLES.join(', ')}.`,
       '- Escribe **JSON estricto y completo**: sin comentarios (`//`), sin "..." ni "repetir para los demás", sin comas finales.',
       '- Escribe en español, con el tono corporativo y preventivo de la skill.',
     ].join('\n');
@@ -58,7 +58,7 @@ const PIMS_PROMPTS = (() => {
     const m = [
       'El JSON del registro que entregaste no cumple el esquema. Corrígelo y devuelve **solo** el JSON completo corregido',
       'en un único bloque ```json, sin texto adicional. No cambies el estado de ningún control salvo que el error lo exija.',
-      `\`controles\` debe tener exactamente 24 objetos, uno por control: ${CONTROLES_24.join(', ')}.`,
+      `\`controles\` debe tener exactamente ${N} objetos, uno por control: ${CONTROLES.join(', ')}.`,
       'JSON estricto: sin comentarios, sin "..." y sin abreviar listas.',
       '', 'Errores encontrados:', ...errores.slice(0, 40).map((e) => `- ${e}`),
     ];
@@ -67,23 +67,24 @@ const PIMS_PROMPTS = (() => {
     return m.join('\n');
   }
 
-  /* Los 24 controles que evalúa la skill (references/controles_iso27701_2025.md). */
-  const CONTROLES_24 = ['A.2.2.2', 'A.2.2.3', 'A.2.2.4', 'A.2.2.5', 'A.2.2.6', 'A.2.2.7', 'A.2.3.2', 'A.2.4.2', 'A.2.4.3',
+  /* Los 26 controles que evalúa la skill (18 de la Tabla A.2 y 8 de la Tabla A.3) (references/controles_iso27701_2025.md). */
+  const CONTROLES = ['A.2.2.2', 'A.2.2.3', 'A.2.2.4', 'A.2.2.5', 'A.2.2.6', 'A.2.2.7', 'A.2.3.2', 'A.2.4.2', 'A.2.4.3',
     'A.2.4.4', 'A.2.5.2', 'A.2.5.3', 'A.2.5.4', 'A.2.5.5', 'A.2.5.6', 'A.2.5.7', 'A.2.5.8', 'A.2.5.9', 'A.3.9', 'A.3.10',
-    'A.3.11', 'A.3.12', 'A.3.13', 'A.3.15'];
+    'A.3.11', 'A.3.12', 'A.3.13', 'A.3.15', 'A.3.18', 'A.3.24'];
+  const N = CONTROLES.length;
 
-  /* Comprueba que el modelo evaluó los 24 controles, una vez cada uno. El esquema no lo exige
+  /* Comprueba que el modelo evaluó los 26 controles, una vez cada uno. El esquema no lo exige
      (minItems), y sin esta revisión un JSON abreviado daría un puntaje calculado sobre menos controles. */
   function revisarControles(obj) {
     const lista = (obj && Array.isArray(obj.controles)) ? obj.controles.map((c) => c && c.control) : [];
     // Un JSON abreviado puede quedar con "controles": [] tras quitar sus comentarios; el esquema lo acepta,
     // pero el puntaje se calcularía sobre cero controles (0/100 sin base). Es un error, no un resultado.
-    if (!lista.length) return obj && 'controles' in obj ? ['controles: la lista está vacía; deben venir los 24 controles evaluados'] : [];
+    if (!lista.length) return obj && 'controles' in obj ? ['controles: la lista está vacía; deben venir los ${N} controles evaluados'] : [];
     const err = [];
-    const faltan = CONTROLES_24.filter((c) => !lista.includes(c));
-    const extra = [...new Set(lista.filter((c) => !CONTROLES_24.includes(c)))];
+    const faltan = CONTROLES.filter((c) => !lista.includes(c));
+    const extra = [...new Set(lista.filter((c) => !CONTROLES.includes(c)))];
     const dup = [...new Set(lista.filter((c, i) => lista.indexOf(c) !== i))];
-    if (faltan.length) err.push(`controles: faltan ${faltan.length} de 24 (${faltan.join(', ')})`);
+    if (faltan.length) err.push(`controles: faltan ${faltan.length} de ${N} (${faltan.join(', ')})`);
     if (extra.length) err.push(`controles: identificadores que no se evalúan (${extra.join(', ')})`);
     if (dup.length) err.push(`controles: repetidos (${dup.join(', ')})`);
     return err;
@@ -143,9 +144,9 @@ const PIMS_PROMPTS = (() => {
     for (const k of CALCULADOS_N8N) delete (e.properties || {})[k];
     const ctl = e.properties && e.properties.controles;
     if (ctl && ctl.items && ctl.items.properties && ctl.items.properties.control) {
-      ctl.minItems = 24; ctl.maxItems = 24;          // la gramática obliga a los 24 objetos
+      ctl.minItems = N; ctl.maxItems = N;            // la gramática obliga a los N objetos
       delete ctl.items.properties.control.pattern;
-      ctl.items.properties.control.enum = CONTROLES_24.slice();
+      ctl.items.properties.control.enum = CONTROLES.slice();
     }
     return e;
   }
@@ -272,6 +273,34 @@ const PIMS_PROMPTS = (() => {
     return o.join('\n');
   }
 
+  /* Sección 12: cómo se aplicaron en este expediente las cláusulas 4 a 10 de la norma.
+     No se califican (obligan a la organización, no al proveedor): se derivan del registro, sin el modelo. */
+  function clausulasAplicadas(res) {
+    const t = res.tercero || {}, c = res.contrato || {}, ctl = res.controles || [];
+    const cuenta = (e) => ctl.filter((x) => x.estado === e).length;
+    const soa = ctl.filter((x) => x.ambito === 'Insumo SoA (Agente 3)').length;
+    const na = cuenta('No aplica');
+    const altas = (res.alertas || []).filter((a) => a.prioridad === 'Alta').length;
+    const renov = (res.alertas || []).filter((a) => a.tipo === 'Renovación').length;
+    const sub = t.rol === 'Sub-encargado';
+    const transfiere = (t.paises_tratamiento || []).length > 1 || (t.subencargados || []).length > 0;
+    const reevaluar = res.nivel_riesgo_pii === 'Alto' || altas > 0 || transfiere;
+    const fin = c.fecha_vigencia_fin || 'sin fecha de fin en el contrato';
+    const filas = [
+      ['4.1 Rol de las partes', `Proveedor evaluado como **${t.rol || 'rol no indicado'}** en este tratamiento.`],
+      ['4.2 "Cliente" según el rol', sub ? `Sub-encargado: su "cliente" es el encargado principal (${t.encargado_principal || 'no indicado'}); los controles A.2.5.x se leen en cascada.` : `El "cliente" del proveedor es ${res.organizacion && res.organizacion.nombre ? res.organizacion.nombre : 'la organización'}.`],
+      ['6.1.2 y 8.2 Evaluación de riesgos', `Riesgo PII **${res.nivel_riesgo_pii || '—'}**, ${altas} alerta(s) Alta(s)${transfiere ? ', transferencias o sub-encargados' : ''}. ${reevaluar ? '**Reevaluar** los riesgos de privacidad de este proveedor antes de firmar o renovar.' : 'Incluir en la próxima evaluación periódica de riesgos.'}`],
+      ['6.1.3 e) Declaración de aplicabilidad', `${soa} controles de insumo para la SoA (Agente 3); ${na ? `${na} marcados "No aplica" con justificación` : 'ninguno marcado "No aplica"'}.`],
+      ['7.4 Comunicación', 'Borrador de correo al proveedor en la sección 9, pendiente de la aprobación del DPO y de Legal.'],
+      ['7.5 Información documentada', `Expediente ${res.id_evaluacion || ''} con informe, registro JSON, SHA-256 del contrato y versiones aplicadas (sección 11).`],
+      ['8.1 Procesos externos', `Dictamen **${res.dictamen || '—'}**; el proveedor solo se considera controlado tras la doble aprobación (sección 10).`],
+      ['9.1 Seguimiento', `Fin de vigencia: ${fin}; ${renov} alerta(s) de renovación o vencimiento. Revisión semanal automática de vencimientos.`],
+      ['10.2 No conformidades', `${cuenta('No cumple')} control(es) No cumple, ${cuenta('Parcial')} Parcial y ${cuenta('Sin evidencia')} Sin evidencia, con su acción correctiva en el plan de remediación (sección 8).`],
+    ];
+    return ['> **Generado por n8n a partir del registro.** Las cláusulas 4 a 10 de ISO/IEC 27701:2025 obligan a la organización; un contrato no puede demostrarlas, por eso no se califican: se indica cómo se aplicaron en este expediente.', '',
+      '| Cláusula | Aplicación en este expediente |', '|---|---|', ...filas.map(([a, b]) => `| ${a} | ${b} |`)].join('\n');
+  }
+
   function componerInforme(informeModelo, res, cfg, extra = {}) {
     const p = res.puntaje_proveedor, s = res.resumen;
     const cargos = cfg.aprobadores_cargos || {};
@@ -317,6 +346,8 @@ const PIMS_PROMPTS = (() => {
     md = insertarEnSeccion(md, 7, sec7);
     md = insertarEnSeccion(md, 10, sec10);
     md = insertarEnSeccion(md, 11, sec11);
+    if (/^##\s+12\.[^\n]*$/m.test(md)) md = insertarEnSeccion(md, 12, clausulasAplicadas(res));
+    else md = `${md.trimEnd()}\n\n## 12. Cláusulas de la norma aplicadas\n\n${clausulasAplicadas(res)}\n`;
     return md;
   }
 
@@ -560,7 +591,7 @@ const PIMS_PROMPTS = (() => {
       `Aprobación: ${ap.estado || '—'}${(ap.historial || []).length ? ' · historial: ' + ap.historial.map((h) => `${h.rol} ${h.decision === 'aprobar' ? 'aprobó' : 'rechazó'} (${h.usuario}, ${String(h.fecha || '').slice(0, 10)}${h.comentario ? `: "${h.comentario}"` : ''})`).join('; ') : ''}`,
       `Certificaciones: ${(r.certificaciones || []).map((x) => `${x.nombre}: ${x.estado}${x.vencida ? ' (vencida)' : ''}`).join('; ') || 'ninguna'}`,
       `Uso de IA: ${JSON.stringify(r.uso_ia || {})}`,
-      '', 'Controles (24):', '| Control | Título | Estado | Severidad | Cláusula | Evidencia | Observación |', '|---|---|---|---|---|---|---|',
+      '', `Controles (${N}):`, '| Control | Título | Estado | Severidad | Cláusula | Evidencia | Observación |', '|---|---|---|---|---|---|---|',
       ...(r.controles || []).map((x) => `| ${x.control} | ${x.titulo || ''} | ${x.estado} | ${x.severidad || ''} | ${x.clausula_dpa || ''} | ${String(x.evidencia || '').slice(0, 160)} | ${String(x.observacion || '').slice(0, 220)} |`),
       '', 'Alertas:', ...(r.alertas || []).map((a) => `- ${a.prioridad} · ${a.tipo}: ${a.descripcion}${(a.controles_relacionados || []).length ? ` (${a.controles_relacionados.join(', ')})` : ''} [origen: ${a.origen || 'modelo'}]`),
       '', 'Remediación propuesta:', ...(r.remediacion || []).map((m) => `- ${m.control}: ${m.accion}${m.clausula_propuesta ? ` (${m.clausula_propuesta})` : ''} · prioridad ${m.prioridad || '—'}`),
@@ -741,9 +772,9 @@ const PIMS_PROMPTS = (() => {
   }
 
   return {
-    systemAuditoria, mensajeAuditoria, mensajeCorreccionJSON, esquemaParaModelo, revisarControles, normalizarRegistro, seccion, CONTROLES_24,
+    systemAuditoria, mensajeAuditoria, mensajeCorreccionJSON, esquemaParaModelo, revisarControles, normalizarRegistro, seccion, CONTROLES, CONTROLES_24: CONTROLES,
     extraerJSON, informeSinJSON,
-    componerInforme, matrizControles, insertarEnSeccion, radarSVG, controlesPorEje, SECCION_DE,
+    componerInforme, matrizControles, insertarEnSeccion, radarSVG, controlesPorEje, SECCION_DE, clausulasAplicadas,
     trocear, systemPerfilador, mensajeNotas, mensajePerfil, mensajeCorreccionPerfil, limpiarMarkdown,
     presupuestoNotas, compactarNotas, normalizarPerfil, chat, registroParaChat, presupuestoChat,
     systemChat, resumenExpediente, resumenOrganizacion, presupuestoChat, mensajeChat, limpiarRespuestaChat,

@@ -265,13 +265,15 @@
       "control": "A.3.9",
       "titulo": "Derechos de acceso",
       "ambito": "Insumo SoA (Agente 3)",
-      "clausula_dpa": "Quinta",
-      "evidencia": "guardará reserva sobre lo observado en el ejercicio de sus funciones",
-      "estado": "Parcial",
+      "clausula_dpa": "No localizada",
+      "evidencia": "—",
+      "estado": "Sin evidencia",
       "severidad": "Ninguna",
       "fuente_requisito": "ISO 27701",
-      "observacion": "Reserva sí; limitación de acceso no.",
-      "_alternativas": []
+      "observacion": "Acceso remoto amplio a cámaras y grabaciones (cláusula cuarta) sin reglas de control de acceso.",
+      "_alternativas": [
+        "No cumple"
+      ]
     },
     {
       "control": "A.3.10",
@@ -333,6 +335,30 @@
       "severidad": "Ninguna",
       "fuente_requisito": "ISO 27701",
       "observacion": "",
+      "_alternativas": []
+    },
+    {
+      "control": "A.3.18",
+      "titulo": "Acuerdos de confidencialidad",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "Quinta",
+      "evidencia": "guardará reserva sobre lo observado en el ejercicio de sus funciones",
+      "estado": "Parcial",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Reserva limitada a lo observado, sin duración ni alcance a los datos y grabaciones.",
+      "_alternativas": []
+    },
+    {
+      "control": "A.3.24",
+      "titulo": "Respaldo de información",
+      "ambito": "Insumo SoA (Agente 3)",
+      "clausula_dpa": "No localizada",
+      "evidencia": "—",
+      "estado": "Sin evidencia",
+      "severidad": "Ninguna",
+      "fuente_requisito": "ISO 27701",
+      "observacion": "Conserva grabaciones 180 días, pero no hay condiciones de respaldo ni de su eliminación.",
       "_alternativas": []
     }
   ],
@@ -496,7 +522,7 @@
     },
     {
       "control": "A.3.9",
-      "accion": "Enmendar: Reserva sí; limitación de acceso no.",
+      "accion": "Enmendar: Acceso remoto amplio a cámaras y grabaciones (cláusula cuarta) sin reglas de control de acceso.",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Media"
     },
@@ -527,6 +553,18 @@
     {
       "control": "A.3.15",
       "accion": "Enmendar: Revisión independiente",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
+    },
+    {
+      "control": "A.3.18",
+      "accion": "Enmendar: Reserva limitada a lo observado, sin duración ni alcance a los datos y grabaciones.",
+      "clausula_propuesta": "Plantilla baseline",
+      "prioridad": "Media"
+    },
+    {
+      "control": "A.3.24",
+      "accion": "Enmendar: Conserva grabaciones 180 días, pero no hay condiciones de respaldo ni de su eliminación.",
       "clausula_propuesta": "Plantilla baseline",
       "prioridad": "Media"
     }

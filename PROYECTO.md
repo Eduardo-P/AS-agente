@@ -8,11 +8,11 @@
 
 ## 1. Qué es
 
-Un sistema que **audita los contratos de encargo de tratamiento (DPA) de los proveedores de una organización** contra ISO/IEC 27701:2025 (24 controles de las tablas A.1, A.2 y A.3) y la ley de protección de datos del país de la organización (hoy, la Ley N.° 29733 del Perú y su Reglamento).
+Un sistema que **audita los contratos de encargo de tratamiento (DPA) de los proveedores de una organización** contra ISO/IEC 27701:2025 (26 controles de las tablas A.1, A.2 y A.3) y la ley de protección de datos del país de la organización (hoy, la Ley N.° 29733 del Perú y su Reglamento).
 
 Para cada contrato entrega:
 
-- una **matriz semáforo** de los 24 controles, con cláusula, cita breve y fuente de la exigencia;
+- una **matriz semáforo** de los 26 controles, con cláusula, cita breve y fuente de la exigencia;
 - un **puntaje de 0 a 100**, total y por sección del Anexo A (A.2.2, A.2.3, A.2.4, A.2.5 y A.3, con tabla y diagrama de radar), y un **dictamen** (Recomendable / Recomendable con condiciones / No recomendable sin enmiendas);
 - **alertas** de riesgo y de renovación o vencimiento;
 - un **plan de remediación** con cláusulas de enmienda y un borrador de correo al proveedor;
@@ -33,7 +33,7 @@ Las reglas de evaluación son únicas; lo que cambia de un caso a otro está en 
 
 | Capa | Qué contiene | Dónde | Cambia por… |
 |---|---|---|---|
-| **Norma** | Los 24 controles de ISO/IEC 27701:2025, criterios del semáforo, fórmula del puntaje, cláusulas modelo | `pims-dpa-auditor/references/`, `assets/`, `scripts/` | Nada: es general |
+| **Norma** | Los 26 controles de ISO/IEC 27701:2025, criterios del semáforo, fórmula del puntaje, cláusulas modelo | `pims-dpa-auditor/references/`, `assets/`, `scripts/` | Nada: es general |
 | **Jurisdicción** | Ley aplicable, autoridad, plazos legales (p. ej. 48 h para notificar a la ANPD), transferencias, derechos | `pims-dpa-auditor/jurisdicciones/<país>/` | País |
 | **Organización** | Política interna (plazos, países aprobados, certificaciones), cargos de los aprobadores, documentos institucionales y su perfil | `organizaciones/<id>/` | Organización |
 
@@ -90,12 +90,19 @@ Agregar un país es copiar `jurisdicciones/_plantilla/` y completarla (`jurisdic
 2. **Respuesta inmediata.** n8n valida la petición y responde `202` con un número de trabajo. La página consulta el avance cada pocos segundos (`datos/trabajos/<T…>.json`) y avisa cuando termina, aunque el usuario cambie de pantalla.
 3. **Contexto.** n8n lee la skill, la configuración de la organización, su jurisdicción y, si existe, su perfil.
 4. **Prompt.** Arma las instrucciones de sistema (SKILL.md + referencias + jurisdicción + configuración + perfil) y el mensaje con el contrato entre marcas `[CONTRATO]`. El contrato va marcado como **contenido no confiable**.
-5. **Modelo.** El selector llama al proveedor configurado. El modelo sigue los 8 pasos de la skill y devuelve el informe de 11 secciones más un bloque JSON.
+5. **Modelo.** El selector llama al proveedor configurado. El modelo sigue los 8 pasos de la skill y devuelve el informe de 12 secciones (la 12, de cláusulas, la escribe n8n) más un bloque JSON.
 6. **Control del JSON.** Si el JSON falta o no cumple el esquema, n8n pide **una** corrección al modelo. Si vuelve a fallar, guarda la respuesta cruda en `datos/fallidos/` y marca el trabajo como error.
 7. **Cálculo.** n8n descarta lo que el modelo haya puesto en los campos calculados y los **recalcula por código**: severidades, alertas de renovación, resumen, puntaje, dictamen, aprobación y trazabilidad (versiones, hash SHA-256 del contrato y del perfil, advertencias).
 8. **Informe.** Inserta las cifras calculadas en las secciones 1, 6, 7, 10 y 11 del informe, para que **el número lo ponga el código y no el modelo**.
 9. **Registro.** Guarda `datos/registro/<id>.json` y `.md`, en estado **Pendiente DPO**.
 10. **Doble puerta humana.** El DPO aprueba o rechaza con comentario; si aprueba, pasa a Legal. Cada decisión queda en el historial con nombre, cargo, fecha y comentario. No se puede aprobar fuera de turno.
+
+### 3.0 Qué de la norma usa el agente
+
+ISO/IEC 27701:2025 tiene 78 controles en su Anexo A (31 para responsables, 18 para encargados y 29 de seguridad compartidos) y requisitos del sistema de gestión en las cláusulas 4 a 10.
+
+- **26 controles calificados en cada contrato:** los 18 de la Tabla A.2 (lo que el contrato debe obligar al encargado) y 8 de la Tabla A.3 que se reflejan en un contrato: A.3.9, A.3.10, A.3.11, A.3.12, A.3.13, A.3.15, A.3.18 (confidencialidad) y A.3.24 (respaldo). Otros controles de seguridad relacionados (criptografía, identidades, autenticación) se revisan como señales dentro de A.3.9 y A.3.10. **A.1.2.7** es el control marco: auditar los contratos es la forma en que la organización lo cumple.
+- **Cláusulas 4 a 10 aplicadas en el proceso:** obligan a la organización, no al proveedor, así que un contrato no puede demostrarlas y no se califican. El agente las aplica así: 4.1 y 4.2 en la determinación del rol; 6.1.2 y 8.2 como insumo y aviso de reevaluar los riesgos; 6.1.3 e) en la regla "No aplica" y en el insumo para la SoA; 7.4 en el borrador de correo; 7.5 en el expediente con su trazabilidad; 8.1 en el control del proveedor con doble aprobación; 9.1 en las alertas de vencimiento; 10.2 en el plan de remediación. La sección 12 de cada informe muestra cómo se aplicaron en ese expediente.
 
 ### 3.1 Los 8 pasos de la skill
 
@@ -104,11 +111,11 @@ Agregar un país es copiar `jurisdicciones/_plantilla/` y completarla (`jurisdic
 | 1. Alcance, roles y vigencia | Partes, objeto, rol del proveedor (Encargado, Sub-encargado, rol no confirmado o invertido) y fechas. Usa el perfil, si existe, para ubicar el proceso de origen. |
 | 2. Nivel de riesgo PII | Alto, Medio o Bajo. Si el perfil indica un riesgo mayor, se toma el **más alto**. |
 | 3. Idoneidad | Certificaciones (verificada, declarada, no presentada, vencida) y uso de IA sobre los datos. |
-| 4. Contraste por control | Los 24 controles: cláusula, cita de 20 palabras como máximo, estado y fuente. |
+| 4. Contraste por control | Los 26 controles: cláusula, cita de 20 palabras como máximo, estado y fuente. |
 | 5. Ley y política interna | Plazos del contrato frente a la jurisdicción configurada y a la política de la organización. |
 | 6. Alertas | Fines propios, transferencias sin garantías, incidentes, devolución, inyección de instrucciones, etc. |
 | 7. Remediación | Enmiendas tomadas de las cláusulas modelo y borrador de correo al proveedor. |
-| 8. Cálculo y salidas | Informe de 11 secciones y JSON según `assets/esquema_salida.json`. |
+| 8. Cálculo y salidas | Informe de 12 secciones (la 12, de cláusulas, la escribe n8n) y JSON según `assets/esquema_salida.json`. |
 
 ### 3.2 La fórmula (siempre por código)
 
@@ -242,7 +249,7 @@ Todos los contratos son ficticios. Los resultados de la UNSA son evaluaciones de
 ## 9. Limitaciones
 
 - **Evaluación documental:** revisa lo que dice el contrato, no lo que el proveedor hace.
-- **Verificación normativa:** Los identificadores y títulos de los controles están verificados contra el texto oficial de ISO/IEC 27701:2025; la correspondencia con la edición 2019 sigue pendiente. Los resúmenes son paráfrasis; el texto de la norma no se incluye en el repositorio.
+- **Verificación normativa:** Los identificadores y títulos de los controles están verificados contra el texto oficial de ISO/IEC 27701:2025; la evaluación se hace solo contra la edición 2025. Los resúmenes son paráfrasis; el texto de la norma no se incluye en el repositorio.
 - **La calificación depende del modelo.** El cálculo no: es determinista y verificado. Con modelos locales pequeños la calidad baja; conviene medirla con los casos de la UNSA.
 - **Solo hay una jurisdicción en uso (Perú).** La plantilla permite agregar otras, pero su contenido debe revisarlo alguien con formación legal.
 - **Herramienta local de demostración:** la página no tiene usuarios ni contraseñas; la aprobación registra quién decidió, no es una firma electrónica.

@@ -6,7 +6,7 @@
 
 | Capa | Dónde | ¿Cambia por…? |
 |---|---|---|
-| **Norma (ISO/IEC 27701:2025)**: 24 controles, criterios, puntaje | `pims-dpa-auditor/references/`, `scripts/` | Nada: es general |
+| **Norma (ISO/IEC 27701:2025)**: 26 controles (24 hasta la sección 13c), criterios, puntaje | `pims-dpa-auditor/references/`, `scripts/` | Nada: es general |
 | **Jurisdicción (país)**: ley, autoridad, plazos legales | `pims-dpa-auditor/jurisdicciones/<id>/` | País |
 | **Organización**: política interna, aprobadores, perfil | `organizaciones/<id>/` | Organización |
 
@@ -187,6 +187,14 @@ La demo anterior (`demo/`, que llamaba a `claude -p` desde un servidor Python) q
 - **Verificación contra el texto oficial:** identificadores, títulos y secciones de los 24 controles coinciden con la norma. `controles_iso27701_2025.md` (v2.1) incorpora, parafraseada, la guía del Anexo B para los controles donde más ayuda (unos 900 tokens más por auditoría). La correspondencia con la edición 2019 sigue pendiente. El texto de la norma no se incluye en el repositorio.
 - Resultados de referencia (`resultados/*.json`, `unsa/esperado/*.json`) regenerados: solo cambia `por_dimension`. Pruebas: 28/28 (prueba nueva del desglose), flujos 30/30 (verifican el radar), página 10/10.
 - **Reimportar los flujos** en n8n: `calcular.js` y `prompts.js` van incrustados en ellos.
+
+## 13c. 26 controles y cláusulas 4 a 10 (revisión contra el texto oficial, pedido del docente)
+
+- **Controles:** de 24 a **26**. Se añaden de la Tabla A.3 **A.3.18** (acuerdos de confidencialidad) y **A.3.24** (respaldo de información), que se reflejan en un contrato de encargo. Otros controles de seguridad relacionados (A.3.26 criptografía, A.3.8 identidades, A.3.23 autenticación, B.3.4 punto de contacto) se revisan como señales dentro de A.3.9, A.3.10 y A.3.13; A.3.25 (registro de eventos) no se incluye: casi ningún DPA lo trata y daría "Sin evidencia" en todos.
+- **Correcciones en `controles_iso27701_2025.md` (v2.2):** A.3.9 limitado al control de acceso (la confidencialidad pasa a A.3.18); A.3.12 con la guía para encargados (cómo entrega el encargado la información que el responsable necesita para notificar, sin demora indebida); la autorización escrita del cambio de sub-encargado pasa de A.2.5.8 a A.2.5.9; guía de A.2.2.7 restituida; nota de A.2.5.7 sobre la lista entregada con confidencialidad; sin la columna "Equiv. 2019": la evaluación es solo contra la edición 2025.
+- **Cláusulas 4 a 10:** obligan a la organización, no al proveedor, así que no se califican. Se aplican en el proceso (`SKILL.md`, "Cláusulas de la norma en el proceso") y cada informe tiene una **sección 12** que n8n escribe a partir del registro: rol (4.1, 4.2), riesgos (6.1.2, 8.2), aplicabilidad (6.1.3 e), comunicación (7.4), información documentada (7.5), procesos externos (8.1), seguimiento (9.1) y no conformidades (10.2).
+- **Referencias recalificadas:** los 8 contratos de prueba en A.3.18 y A.3.24, y A.3.9 donde solo había confidencialidad. A los contratos de AndesCloud y UNSA 03 (los "buenos") se les añadió una frase sobre respaldos. Puntajes: NubeAndina 22, AndesCloud 100, DigiServ 0 y UNSA 50, **44** (antes 46), 99, 0 y 31; dictámenes sin cambios. Las ejecuciones del 2026-10-07 quedan como registro histórico con 24 controles.
+- Pruebas: 28/28, equivalencia JS = Python en 5 012 casos, flujos 30/30 (verifican 26 controles y la sección 12), página 10/10, UNSA con el modelo simulado 130/130.
 
 ## 14. Pendiente
 
